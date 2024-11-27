@@ -5,7 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 
 // Passport configuration
 passport.serializeUser((user: any, done) => {
@@ -36,8 +36,8 @@ export function registerRoutes(app: Express) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/api/auth/google/callback"
-  }, async (accessToken, refreshToken, profile, done) => {
+    callbackURL: "https://" + process.env.REPL_SLUG + "." + process.env.REPL_OWNER + ".repl.co/api/auth/google/callback"
+  }, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
     try {
       let user = await db.query.users.findFirst({
         where: eq(users.email, profile.emails?.[0]?.value || ""),
