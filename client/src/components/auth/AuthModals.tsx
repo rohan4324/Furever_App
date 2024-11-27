@@ -1,4 +1,9 @@
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription 
+} from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
