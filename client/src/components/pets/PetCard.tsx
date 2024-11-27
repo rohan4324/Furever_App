@@ -64,7 +64,7 @@ export default function PetCard({ pet }: PetCardProps) {
         <Dialog open={showChat} onOpenChange={setShowChat}>
           <DialogTrigger asChild>
             <Button variant="outline" className="flex-1">
-              Contact Shelter
+              Contact {pet.breeder ? "Breeder" : "Shelter"}
             </Button>
           </DialogTrigger>
           <ChatBox

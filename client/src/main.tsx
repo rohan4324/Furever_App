@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import HomePage from "./pages/HomePage";
 import PetListings from "./pages/PetListings";
 import Shelters from "./pages/Shelters";
+import Breeders from "./pages/Breeders";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
 import Navbar from "./components/layout/Navbar";
 
@@ -20,6 +21,7 @@ function Router() {
           <Route path="/" component={HomePage} />
           <Route path="/pets" component={PetListings} />
           <Route path="/shelters" component={Shelters} />
+          <Route path="/breeders" component={Breeders} />
           <Route path="/quiz" component={CompatibilityQuiz} />
           <Route>404 Page Not Found</Route>
         </Switch>

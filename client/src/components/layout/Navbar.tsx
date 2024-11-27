@@ -47,6 +47,15 @@ export default function Navbar() {
               <Button
                 variant="ghost"
                 className={navigationMenuTriggerStyle()}
+                onClick={() => setLocation("/breeders")}
+              >
+                Breeders
+              </Button>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Button
+                variant="ghost"
+                className={navigationMenuTriggerStyle()}
                 onClick={() => setLocation("/quiz")}
               >
                 Compatibility Quiz
