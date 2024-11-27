@@ -6,7 +6,7 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AuthModals from "../auth/AuthModals";
@@ -14,6 +14,7 @@ import AuthModals from "../auth/AuthModals";
 export default function Navbar() {
   const [showAuth, setShowAuth] = useState(false);
   const [authType, setAuthType] = useState<"login" | "register">("login");
+  const [, setLocation] = useLocation();
 
   return (
     <div className="border-b">
@@ -25,28 +26,25 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                onClick={() => navigate("/pets")}
-              >
-                Find Pets
-              </NavigationMenuLink>
+              <Link href="/pets">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Find Pets
+                </NavigationMenuLink>
+              </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                onClick={() => navigate("/shelters")}
-              >
-                Shelters
-              </NavigationMenuLink>
+              <Link href="/shelters">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Shelters
+                </NavigationMenuLink>
+              </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                onClick={() => navigate("/quiz")}
-              >
-                Compatibility Quiz
-              </NavigationMenuLink>
+              <Link href="/quiz">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Compatibility Quiz
+                </NavigationMenuLink>
+              </Link>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>

@@ -8,7 +8,7 @@ interface PetFiltersProps {
 
 export default function PetFilters({ onFilterChange }: PetFiltersProps) {
   const handleFilterChange = (key: string, value: string) => {
-    onFilterChange((prev) => ({ ...prev, [key]: value }));
+    onFilterChange({ [key]: value });
   };
 
   return (

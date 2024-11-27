@@ -26,7 +26,7 @@ export default function PetCard({ pet }: PetCardProps) {
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-2xl font-semibold">{pet.name}</h3>
-          <Badge variant={pet.status === "available" ? "success" : "secondary"}>
+          <Badge variant={pet.status === "available" ? "secondary" : "outline"}>
             {pet.status}
           </Badge>
         </div>

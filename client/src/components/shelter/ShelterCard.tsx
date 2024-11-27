@@ -27,7 +27,7 @@ export default function ShelterCard({ shelter }: ShelterCardProps) {
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-xl font-semibold">{shelter.user.name}</h3>
               {shelter.verificationStatus && (
-                <Badge variant="success">Verified</Badge>
+                <Badge variant="secondary">Verified</Badge>
               )}
             </div>
 
