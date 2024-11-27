@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "../db";
-import { users, pets, shelters, messages, adoptionApplications } from "@db/schema";
+import { users, pets, shelters, breeders, messages, adoptionApplications } from "@db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -24,6 +24,33 @@ passport.deserializeUser(async (id: number, done) => {
 });
 
 export function registerRoutes(app: Express) {
+  // Breeder routes
+  app.get("/api/breeders", async (req, res) => {
+    try {
+      const results = await db
+        .select({
+          id: breeders.id,
+          userId: breeders.userId,
+          description: breeders.description,
+          address: breeders.address,
+          phone: breeders.phone,
+          website: breeders.website,
+          specializations: breeders.specializations,
+          verificationStatus: breeders.verificationStatus,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email
+          }
+        })
+        .from(breeders)
+        .leftJoin(users, eq(breeders.userId, users.id));
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch breeders" });
+    }
+  });
+
   // Initialize passport
   app.use(passport.initialize());
   app.use(passport.session());
@@ -51,7 +78,7 @@ export function registerRoutes(app: Express) {
             email: profile.emails?.[0]?.value || "",
             name: profile.displayName,
             password: "", // Social login users don't need passwords
-            type: "adopter",
+            type: "adopter_buyer",
           })
           .returning();
         user = newUser;

@@ -26,7 +26,7 @@ export default function AuthModals({ type, onClose }: AuthModalsProps) {
       email: "",
       password: "",
       name: "",
-      type: "adopter",
+      type: "adopter_buyer",
     },
   });
 

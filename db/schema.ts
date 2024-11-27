@@ -23,6 +23,8 @@ export const pets = pgTable("pets", {
   description: text("description").notNull(),
   images: text("images").array().notNull(),
   shelterId: integer("shelter_id").references(() => users.id).notNull(),
+  breederId: integer("breeder_id").references(() => users.id),
+  isFromBreeder: boolean("is_from_breeder").default(false).notNull(),
   status: text("status", { enum: ["available", "pending", "adopted"] }).default("available").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
@@ -34,6 +36,17 @@ export const shelters = pgTable("shelters", {
   address: text("address").notNull(),
   phone: text("phone").notNull(),
   website: text("website"),
+  verificationStatus: boolean("verification_status").default(false).notNull()
+});
+
+export const breeders = pgTable("breeders", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  description: text("description").notNull(),
+  address: text("address").notNull(),
+  phone: text("phone").notNull(),
+  website: text("website"),
+  specializations: text("specializations").array().notNull().default([]),
   verificationStatus: boolean("verification_status").default(false).notNull()
 });
 
@@ -61,6 +74,8 @@ export const insertPetSchema = createInsertSchema(pets);
 export const selectPetSchema = createSelectSchema(pets);
 export const insertShelterSchema = createInsertSchema(shelters);
 export const selectShelterSchema = createSelectSchema(shelters);
+export const insertBreederSchema = createInsertSchema(breeders);
+export const selectBreederSchema = createSelectSchema(breeders);
 export const insertMessageSchema = createInsertSchema(messages);
 export const selectMessageSchema = createSelectSchema(messages);
 export const insertAdoptionApplicationSchema = createInsertSchema(adoptionApplications);
@@ -71,5 +86,6 @@ export type User = z.infer<typeof selectUserSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Pet = z.infer<typeof selectPetSchema>;
 export type Shelter = z.infer<typeof selectShelterSchema>;
+export type Breeder = z.infer<typeof selectBreederSchema>;
 export type Message = z.infer<typeof selectMessageSchema>;
 export type AdoptionApplication = z.infer<typeof selectAdoptionApplicationSchema>;

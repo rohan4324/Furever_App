@@ -37,7 +37,7 @@ export default function BreederCard({ breeder }: BreederCardProps) {
 
             <div className="space-y-1 text-sm mb-4">
               <p>
-                <strong>Specializations:</strong> {breeder.specializations.join(", ")}
+                <strong>Specializations:</strong> {(breeder.specializations as string[]).join(", ")}
               </p>
               <p>
                 <strong>Address:</strong> {breeder.address}
