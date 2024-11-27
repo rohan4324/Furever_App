@@ -57,6 +57,9 @@ export default function AuthModals({ type, onClose }: AuthModalsProps) {
         <DialogTitle>
           {type === "login" ? "Welcome Back" : "Create Account"}
         </DialogTitle>
+        <DialogDescription>
+          {type === "login" ? "Sign in to your account" : "Create a new account"}
+        </DialogDescription>
       </DialogHeader>
 
       <Form {...form}>

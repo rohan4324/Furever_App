@@ -59,7 +59,7 @@ export function registerRoutes(app: Express) {
 
       done(null, user);
     } catch (error) {
-      done(error as Error, null);
+      done(error as Error, undefined);
     }
   }));
 

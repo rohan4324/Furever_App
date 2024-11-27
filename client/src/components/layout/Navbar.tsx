@@ -26,31 +26,31 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuLink
+              <Button
+                variant="ghost"
                 className={navigationMenuTriggerStyle()}
                 onClick={() => setLocation("/pets")}
-                style={{ cursor: 'pointer' }}
               >
                 Find Pets
-              </NavigationMenuLink>
+              </Button>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink
+              <Button
+                variant="ghost"
                 className={navigationMenuTriggerStyle()}
                 onClick={() => setLocation("/shelters")}
-                style={{ cursor: 'pointer' }}
               >
                 Shelters
-              </NavigationMenuLink>
+              </Button>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink
+              <Button
+                variant="ghost"
                 className={navigationMenuTriggerStyle()}
                 onClick={() => setLocation("/quiz")}
-                style={{ cursor: 'pointer' }}
               >
                 Compatibility Quiz
-              </NavigationMenuLink>
+              </Button>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
