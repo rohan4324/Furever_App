@@ -44,23 +44,47 @@ export function registerRoutes(app: Express) {
 
   // Pet routes
   app.get("/api/pets", async (req, res) => {
-    const filters = z.object({
-      type: z.string().optional(),
-      breed: z.string().optional(),
-      size: z.string().optional(),
-      age: z.string().optional(),
-    }).parse(req.query);
+    try {
+      const filterSchema = z.object({
+        type: z.enum(["dog", "cat", "other"]).optional(),
+        breed: z.string().optional(),
+        size: z.enum(["small", "medium", "large"]).optional(),
+        age: z.enum(["baby", "young", "adult", "senior"]).optional(),
+      });
 
-    let query = db.select().from(pets);
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        query = query.where(eq(pets[key as keyof typeof pets], value));
+      const filters = filterSchema.parse(req.query);
+      const conditions = [];
+
+      if (filters.type) {
+        conditions.push(eq(pets.type, filters.type));
       }
-    });
+      if (filters.breed) {
+        conditions.push(eq(pets.breed, filters.breed));
+      }
+      if (filters.size) {
+        conditions.push(eq(pets.size, filters.size));
+      }
+      if (filters.age) {
+        conditions.push(eq(pets.age, filters.age));
+      }
 
-    const results = await query;
-    res.json(results);
+      const query = db.select().from(pets);
+      
+      if (conditions.length > 0) {
+        conditions.forEach(condition => {
+          query.where(condition);
+        });
+      }
+
+      const results = await query;
+      res.json(results);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid query parameters" });
+      } else {
+        res.status(500).json({ error: "Internal server error" });
+      }
+    }
   });
 
   app.post("/api/pets", async (req, res) => {
