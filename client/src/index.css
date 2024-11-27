@@ -12,36 +12,47 @@
 }
 
 .button, .btn {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button:hover, .btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: var(--primary);
+  color: white;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 40 30% 98%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 25 95% 53%;
+    --primary: 16 90% 50%;
     --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 280 90% 60%;
+    --secondary: 200 80% 45%;
     --secondary-foreground: 355.7 100% 97.3%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 170 85% 45%;
+    --accent: 150 70% 40%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 25 95% 53%;
-    --radius: 1.2rem;
+    --ring: 16 90% 50%;
+    --radius: 1.5rem;
   }
 }
 
@@ -50,19 +61,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-  }
-}
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }

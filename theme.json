@@ -1,9 +1,9 @@
 {
   "variant": "tint",
-  "primary": "hsl(25, 95%, 53%)",
-  "secondary": "hsl(280, 90%, 60%)",
-  "accent": "hsl(170, 85%, 45%)",
-  "background": "hsl(0, 0%, 100%)",
+  "primary": "hsl(16, 90%, 50%)",
+  "secondary": "hsl(200, 80%, 45%)",
+  "accent": "hsl(150, 70%, 40%)",
+  "background": "hsl(40, 30%, 98%)",
   "appearance": "light",
-  "radius": 1.2
+  "radius": 1.5
 }
