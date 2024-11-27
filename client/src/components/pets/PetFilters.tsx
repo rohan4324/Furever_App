@@ -18,13 +18,20 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
   };
 
   const handleReset = () => {
+    // Reset all select components to initial state
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+      select.value = '';
+    });
+    
+    // Clear filter state
     onFilterChange({
       type: undefined,
       breed: undefined,
       size: undefined,
       ageYears: undefined,
       ageMonths: undefined,
-      gender: undefined,
+      gender: undefined
     });
   };
 
@@ -44,7 +51,7 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label>Type</Label>
             <Select onValueChange={(value) => handleFilterChange("type", value)}>
