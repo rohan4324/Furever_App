@@ -6,12 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Pet } from "@db/schema";
 
 type FilterState = {
-  type?: string | undefined;
-  breed?: string | undefined;
-  size?: string | undefined;
-  gender?: string | undefined;
-  ageYears?: string | undefined;
-  ageMonths?: string | undefined;
+  type?: string;
+  breed?: string;
+  size?: string;
+  gender?: string;
+  ageYears?: string;
+  ageMonths?: string;
 };
 
 export default function PetListings() {

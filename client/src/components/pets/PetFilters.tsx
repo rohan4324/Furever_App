@@ -10,28 +10,17 @@ interface PetFiltersProps {
 
 export default function PetFilters({ onFilterChange }: PetFiltersProps) {
   const handleFilterChange = (key: string, value: string | null) => {
-    if (value === null) {
-      onFilterChange({ [key]: undefined });
-    } else {
-      onFilterChange({ [key]: value });
-    }
+    onFilterChange({ [key]: value || "" });
   };
 
   const handleReset = () => {
-    // Reset all select components to initial state
-    const selects = document.querySelectorAll('select');
-    selects.forEach(select => {
-      select.value = '';
-    });
-    
-    // Clear filter state
     onFilterChange({
-      type: undefined,
-      breed: undefined,
-      size: undefined,
-      ageYears: undefined,
-      ageMonths: undefined,
-      gender: undefined
+      type: "",
+      breed: "",
+      size: "",
+      ageYears: "",
+      ageMonths: "",
+      gender: ""
     });
   };
 
@@ -62,6 +51,33 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
                 <SelectItem value="dog">Dogs</SelectItem>
                 <SelectItem value="cat">Cats</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Gender</Label>
+            <Select onValueChange={(value) => handleFilterChange("gender", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Any gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">Male</SelectItem>
+                <SelectItem value="female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Size</Label>
+            <Select onValueChange={(value) => handleFilterChange("size", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Any size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">Small</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="large">Large</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -98,33 +114,6 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
                 </Select>
               </div>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Size</Label>
-            <Select onValueChange={(value) => handleFilterChange("size", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Any size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="small">Small</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="large">Large</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Gender</Label>
-            <Select onValueChange={(value) => handleFilterChange("gender", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Any gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardContent>

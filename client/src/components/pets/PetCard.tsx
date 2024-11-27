@@ -13,6 +13,8 @@ interface PetCardProps {
 export default function PetCard({ pet }: PetCardProps) {
   const [showChat, setShowChat] = useState(false);
 
+  const age = pet.age as { years: number; months: number };
+
   return (
     <Card className="overflow-hidden">
       <div className="aspect-square overflow-hidden">
@@ -37,14 +39,14 @@ export default function PetCard({ pet }: PetCardProps) {
           </p>
           <p>
             <strong>Age:</strong>{' '}
-            {pet.age.years > 0
-              ? `${pet.age.years} year${pet.age.years !== 1 ? 's' : ''}`
+            {age.years > 0
+              ? `${age.years} year${age.years !== 1 ? 's' : ''}`
               : ''
             }
-            {pet.age.years > 0 && pet.age.months > 0 ? ' and ' : ''}
-            {pet.age.months > 0
-              ? `${pet.age.months} month${pet.age.months !== 1 ? 's' : ''}`
-              : pet.age.years === 0 ? '< 1 month' : ''
+            {age.years > 0 && age.months > 0 ? ' and ' : ''}
+            {age.months > 0
+              ? `${age.months} month${age.months !== 1 ? 's' : ''}`
+              : age.years === 0 ? '< 1 month' : ''
             }
           </p>
           <p>
