@@ -4,8 +4,64 @@ import { users, pets, shelters, messages, adoptionApplications } from "@db/schem
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+
+// Passport configuration
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+    });
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
 
 export function registerRoutes(app: Express) {
+  // Initialize passport
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Google OAuth Strategy
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    throw new Error("Google OAuth credentials are required");
+  }
+
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "/api/auth/google/callback"
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await db.query.users.findFirst({
+        where: eq(users.email, profile.emails?.[0]?.value || ""),
+      });
+
+      if (!user) {
+        const [newUser] = await db.insert(users)
+          .values({
+            email: profile.emails?.[0]?.value || "",
+            name: profile.displayName,
+            password: "", // Social login users don't need passwords
+            type: "adopter",
+          })
+          .returning();
+        user = newUser;
+      }
+
+      done(null, user);
+    } catch (error) {
+      done(error, null);
+    }
+  }));
+
+  
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -24,6 +80,15 @@ export function registerRoutes(app: Express) {
       res.status(400).json({ error: "Registration failed" });
     }
   });
+
+  // OAuth Routes
+  app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+  app.get("/api/auth/google/callback", passport.authenticate("google", {
+    successRedirect: "/",
+    failureRedirect: "/?auth=failed"
+  }));
+
+  
 
   app.post("/api/auth/login", async (req, res) => {
     try {

@@ -20,14 +20,14 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
       select.value = '';
     });
     
-    // Update filter state with undefined values
+    // Update filter state with empty string values
     onFilterChange({
-      type: undefined,
-      breed: undefined,
-      size: undefined,
-      ageYears: undefined,
-      ageMonths: undefined,
-      gender: undefined
+      type: "",
+      breed: "",
+      size: "",
+      ageYears: "",
+      ageMonths: "",
+      gender: ""
     });
   };
 
