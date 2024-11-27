@@ -43,25 +43,53 @@ export default function CompatibilityQuiz() {
     setAnswers({ ...answers, [questions[currentQuestion].id]: answer });
     
     if (currentQuestion === questions.length - 1) {
-      // Quiz completed - calculate results
-      const results = calculateResults(answers);
-      // Navigate to pet listings with recommended filters
-      navigate(`/pets?${new URLSearchParams(results)}`);
+      const results = calculateResults({...answers, [questions[currentQuestion].id]: answer});
+      const queryString = new URLSearchParams(
+        Object.entries(results)
+          .filter(([_, value]) => value !== undefined && value !== "")
+          .reduce((acc, [key, value]) => ({...acc, [key]: value}), {})
+      ).toString();
+      navigate(`/pets?${queryString}`);
     } else {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
 
   const calculateResults = (answers: Record<number, string>) => {
-    // Simple mapping of answers to pet recommendations
     const result: Record<string, string> = {};
     
-    if (answers[1] === "Apartment") {
+    // Living space mapping
+    if (answers[1] === "Apartment" || answers[1] === "Small house") {
       result.size = "small";
+    } else if (answers[1] === "House with yard") {
+      result.size = "medium";
+    } else if (answers[1] === "Farm/Large property") {
+      result.size = "large";
     }
     
+    // Hours at home mapping
     if (answers[2] === "0-4 hours") {
       result.type = "cat";
+    } else if (answers[2] === "12+ hours") {
+      // More flexible with pet type for people home often
+      result.type = "";
+    }
+    
+    // Experience level affects recommendations
+    if (answers[3] === "First-time owner") {
+      // Prefer easier pets for first-time owners
+      result.type = result.type || "cat";
+    }
+    
+    // Activity level mapping
+    if (answers[4] === "Very active") {
+      result.type = "dog"; // Dogs better for active people
+    }
+    
+    // Children consideration
+    if (answers[5] === "Young children" || answers[5] === "Expecting") {
+      result.type = "dog"; // Dogs often good with kids
+      result.size = "medium"; // Medium size safer with children
     }
     
     return result;
