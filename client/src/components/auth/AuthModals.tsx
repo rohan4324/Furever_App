@@ -93,8 +93,10 @@ export default function AuthModals({ type, onClose }: AuthModalsProps) {
             <div className="space-y-2">
               <label>Account Type</label>
               <select {...form.register("type")} className="w-full p-2 border rounded">
-                <option value="adopter">Adopter</option>
-                <option value="shelter">Shelter/NGO</option>
+                <option value="adopter_buyer">Adopter/Buyer</option>
+                <option value="shelter_ngo">Shelter/NGO</option>
+                <option value="breeder">Breeder</option>
+                <option value="expert_consultant">Expert/Consultant</option>
               </select>
             </div>
           )}

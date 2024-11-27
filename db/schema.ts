@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   avatar: text("avatar"),
-  type: text("type", { enum: ["adopter", "shelter"] }).notNull(),
+  type: text("type", { enum: ["adopter_buyer", "shelter_ngo", "breeder", "expert_consultant"] }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
