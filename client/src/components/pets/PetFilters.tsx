@@ -14,13 +14,20 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
   };
 
   const handleReset = () => {
+    // Reset all select components to show placeholders
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+      select.value = '';
+    });
+    
+    // Update filter state with undefined values
     onFilterChange({
-      type: "",
-      breed: "",
-      size: "",
-      ageYears: "",
-      ageMonths: "",
-      gender: ""
+      type: undefined,
+      breed: undefined,
+      size: undefined,
+      ageYears: undefined,
+      ageMonths: undefined,
+      gender: undefined
     });
   };
 

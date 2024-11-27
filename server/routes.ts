@@ -46,28 +46,28 @@ export function registerRoutes(app: Express) {
   app.get("/api/pets", async (req, res) => {
     try {
       const filterSchema = z.object({
-        type: z.enum(["dog", "cat", "other"]).optional(),
-        breed: z.string().optional(),
-        size: z.enum(["small", "medium", "large"]).optional(),
-        gender: z.enum(["male", "female"]).optional(),
-        ageYears: z.string().optional(),
-        ageMonths: z.string().optional(),
-      });
+        type: z.enum(["dog", "cat", "other"]).optional().nullable(),
+        breed: z.string().optional().nullable(),
+        size: z.enum(["small", "medium", "large"]).optional().nullable(),
+        gender: z.enum(["male", "female"]).optional().nullable(),
+        ageYears: z.string().optional().nullable(),
+        ageMonths: z.string().optional().nullable(),
+      }).partial();
 
       const filters = filterSchema.parse(req.query);
       const conditions = [];
 
       // Basic filters
-      if (filters.type) {
+      if (filters.type != null) {
         conditions.push(eq(pets.type, filters.type));
       }
-      if (filters.breed) {
+      if (filters.breed != null) {
         conditions.push(eq(pets.breed, filters.breed));
       }
-      if (filters.size) {
+      if (filters.size != null) {
         conditions.push(eq(pets.size, filters.size));
       }
-      if (filters.gender) {
+      if (filters.gender != null) {
         conditions.push(eq(pets.gender, filters.gender));
       }
 
