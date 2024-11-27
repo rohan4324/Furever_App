@@ -108,9 +108,28 @@ export function registerRoutes(app: Express) {
 
   // Shelter routes
   app.get("/api/shelters", async (req, res) => {
-    const results = await db.select().from(shelters)
-      .leftJoin(users, eq(shelters.userId, users.id));
-    res.json(results);
+    try {
+      const results = await db
+        .select({
+          id: shelters.id,
+          userId: shelters.userId,
+          description: shelters.description,
+          address: shelters.address,
+          phone: shelters.phone,
+          website: shelters.website,
+          verificationStatus: shelters.verificationStatus,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email
+          }
+        })
+        .from(shelters)
+        .leftJoin(users, eq(shelters.userId, users.id));
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch shelters" });
+    }
   });
 
   // Messages routes
