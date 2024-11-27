@@ -17,7 +17,7 @@ export const pets = pgTable("pets", {
   name: text("name").notNull(),
   type: text("type", { enum: ["dog", "cat", "other"] }).notNull(),
   breed: text("breed").notNull(),
-  age: text("age", { enum: ["baby", "young", "adult", "senior"] }).notNull(),
+  age: jsonb("age").notNull().default({ years: 0, months: 0 }).notNull(),
   gender: text("gender", { enum: ["male", "female"] }).notNull(),
   size: text("size", { enum: ["small", "medium", "large"] }).notNull(),
   description: text("description").notNull(),

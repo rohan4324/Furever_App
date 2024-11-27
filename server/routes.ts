@@ -49,7 +49,8 @@ export function registerRoutes(app: Express) {
         type: z.enum(["dog", "cat", "other"]).optional(),
         breed: z.string().optional(),
         size: z.enum(["small", "medium", "large"]).optional(),
-        age: z.enum(["baby", "young", "adult", "senior"]).optional(),
+        ageYears: z.string().optional(),
+        ageMonths: z.string().optional(),
       });
 
       const filters = filterSchema.parse(req.query);
@@ -64,8 +65,30 @@ export function registerRoutes(app: Express) {
       if (filters.size) {
         conditions.push(eq(pets.size, filters.size));
       }
-      if (filters.age) {
-        conditions.push(eq(pets.age, filters.age));
+      if (filters.ageYears) {
+        const minYears = parseInt(filters.ageYears);
+        const maxYears = minYears === 6 ? 30 : minYears + 2;
+        conditions.push(
+          and(
+            db.sql`pets.age->>'years' >= ${minYears}::text`,
+            db.sql`pets.age->>'years' < ${maxYears}::text`
+          )
+        );
+      }
+      if (filters.ageMonths) {
+        const monthRanges = {
+          "0": [0, 3],
+          "4": [4, 6],
+          "7": [7, 9],
+          "10": [10, 12]
+        };
+        const [minMonths, maxMonths] = monthRanges[filters.ageMonths as keyof typeof monthRanges];
+        conditions.push(
+          and(
+            db.sql`pets.age->>'months' >= ${minMonths}::text`,
+            db.sql`pets.age->>'months' < ${maxMonths}::text`
+          )
+        );
       }
 
       const query = db.select().from(pets);

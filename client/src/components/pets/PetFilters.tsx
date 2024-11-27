@@ -30,18 +30,37 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Age</Label>
-            <Select onValueChange={(value) => handleFilterChange("age", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Any age" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="baby">Baby</SelectItem>
-                <SelectItem value="young">Young</SelectItem>
-                <SelectItem value="adult">Adult</SelectItem>
-                <SelectItem value="senior">Senior</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Age Range</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Years</Label>
+                <Select onValueChange={(value) => handleFilterChange("ageYears", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Under 1</SelectItem>
+                    <SelectItem value="1">1-2</SelectItem>
+                    <SelectItem value="3">3-5</SelectItem>
+                    <SelectItem value="6">6+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Months</Label>
+                <Select onValueChange={(value) => handleFilterChange("ageMonths", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0-3</SelectItem>
+                    <SelectItem value="4">4-6</SelectItem>
+                    <SelectItem value="7">7-9</SelectItem>
+                    <SelectItem value="10">10-12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

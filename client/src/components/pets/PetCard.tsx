@@ -36,7 +36,16 @@ export default function PetCard({ pet }: PetCardProps) {
             <strong>Breed:</strong> {pet.breed}
           </p>
           <p>
-            <strong>Age:</strong> {pet.age}
+            <strong>Age:</strong>{' '}
+            {pet.age.years > 0
+              ? `${pet.age.years} year${pet.age.years !== 1 ? 's' : ''}`
+              : ''
+            }
+            {pet.age.years > 0 && pet.age.months > 0 ? ' and ' : ''}
+            {pet.age.months > 0
+              ? `${pet.age.months} month${pet.age.months !== 1 ? 's' : ''}`
+              : pet.age.years === 0 ? '< 1 month' : ''
+            }
           </p>
           <p>
             <strong>Size:</strong> {pet.size}
