@@ -26,11 +26,11 @@ export default function Shelters() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {isLoading
-          ? [...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-[300px] rounded-lg" />
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={`skeleton-${i}`} className="h-[300px] rounded-lg" />
             ))
           : shelters?.map((shelter) => (
-              <ShelterCard key={shelter.id} shelter={shelter} />
+              <ShelterCard key={`shelter-${shelter.id}`} shelter={shelter} />
             ))}
       </div>
     </div>

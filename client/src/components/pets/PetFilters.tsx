@@ -57,7 +57,12 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
               <SelectContent>
                 <SelectItem value="dog">Dogs</SelectItem>
                 <SelectItem value="cat">Cats</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="fish">Fish</SelectItem>
+                <SelectItem value="bird">Birds</SelectItem>
+                <SelectItem value="hamster">Hamsters</SelectItem>
+                <SelectItem value="rabbit">Rabbits</SelectItem>
+                <SelectItem value="guinea_pig">Guinea Pigs</SelectItem>
+                <SelectItem value="other">Other Pets</SelectItem>
               </SelectContent>
             </Select>
           </div>

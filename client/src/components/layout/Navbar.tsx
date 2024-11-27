@@ -26,25 +26,31 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <Link href="/pets">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Find Pets
-                </NavigationMenuLink>
-              </Link>
+              <NavigationMenuLink
+                className={navigationMenuTriggerStyle()}
+                onClick={() => setLocation("/pets")}
+                style={{ cursor: 'pointer' }}
+              >
+                Find Pets
+              </NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link href="/shelters">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Shelters
-                </NavigationMenuLink>
-              </Link>
+              <NavigationMenuLink
+                className={navigationMenuTriggerStyle()}
+                onClick={() => setLocation("/shelters")}
+                style={{ cursor: 'pointer' }}
+              >
+                Shelters
+              </NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link href="/quiz">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Compatibility Quiz
-                </NavigationMenuLink>
-              </Link>
+              <NavigationMenuLink
+                className={navigationMenuTriggerStyle()}
+                onClick={() => setLocation("/quiz")}
+                style={{ cursor: 'pointer' }}
+              >
+                Compatibility Quiz
+              </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>

@@ -46,7 +46,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/pets", async (req, res) => {
     try {
       const filterSchema = z.object({
-        type: z.enum(["dog", "cat", "other"]).optional().nullable(),
+        type: z.enum(["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"]).optional().nullable(),
         breed: z.string().optional().nullable(),
         size: z.enum(["small", "medium", "large"]).optional().nullable(),
         gender: z.enum(["male", "female"]).optional().nullable(),

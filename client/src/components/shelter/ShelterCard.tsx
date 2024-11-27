@@ -18,8 +18,8 @@ export default function ShelterCard({ shelter }: ShelterCardProps) {
       <CardContent className="p-6">
         <div className="flex items-start gap-6">
           <img
-            src={`https://api.dicebear.com/7.x/initials/svg?seed=${shelter.user?.name || 'Unknown Shelter'}`}
-            alt={shelter.user?.name || 'Unknown Shelter'}
+            src={`https://api.dicebear.com/7.x/initials/svg?seed=${shelter.user?.name ?? 'Unknown Shelter'}`}
+            alt={shelter.user?.name ?? 'Unknown Shelter'}
             className="w-24 h-24 rounded-lg object-cover"
           />
           

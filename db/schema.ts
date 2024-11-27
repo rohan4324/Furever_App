@@ -15,7 +15,7 @@ export const users = pgTable("users", {
 export const pets = pgTable("pets", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
-  type: text("type", { enum: ["dog", "cat", "other"] }).notNull(),
+  type: text("type", { enum: ["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"] }).notNull(),
   breed: text("breed").notNull(),
   age: jsonb("age").notNull().default({ years: 0, months: 0 }).notNull(),
   gender: text("gender", { enum: ["male", "female"] }).notNull(),
