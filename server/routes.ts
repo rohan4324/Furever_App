@@ -34,9 +34,11 @@ export function registerRoutes(app: Express) {
   }
 
   passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://" + process.env.REPL_SLUG + "." + process.env.REPL_OWNER + ".repl.co/api/auth/google/callback"
+    clientID: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    callbackURL: process.env.NODE_ENV === 'production'
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`
+      : 'http://localhost:5000/api/auth/google/callback'
   }, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
     try {
       let user = await db.query.users.findFirst({
@@ -57,7 +59,7 @@ export function registerRoutes(app: Express) {
 
       done(null, user);
     } catch (error) {
-      done(error, null);
+      done(error as Error, null);
     }
   }));
 
@@ -83,10 +85,15 @@ export function registerRoutes(app: Express) {
 
   // OAuth Routes
   app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-  app.get("/api/auth/google/callback", passport.authenticate("google", {
-    successRedirect: "/",
-    failureRedirect: "/?auth=failed"
-  }));
+  app.get("/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    (req, res) => {
+      if (req.user) {
+        req.session.userId = (req.user as any).id;
+      }
+      res.redirect("/");
+    }
+  );
 
   
 

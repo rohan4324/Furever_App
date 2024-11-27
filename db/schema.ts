@@ -68,6 +68,7 @@ export const selectAdoptionApplicationSchema = createSelectSchema(adoptionApplic
 
 // Types
 export type User = z.infer<typeof selectUserSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Pet = z.infer<typeof selectPetSchema>;
 export type Shelter = z.infer<typeof selectShelterSchema>;
 export type Message = z.infer<typeof selectMessageSchema>;
