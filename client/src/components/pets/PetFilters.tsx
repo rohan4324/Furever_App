@@ -1,20 +1,50 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface PetFiltersProps {
   onFilterChange: (filters: Record<string, string>) => void;
 }
 
 export default function PetFilters({ onFilterChange }: PetFiltersProps) {
-  const handleFilterChange = (key: string, value: string) => {
-    onFilterChange({ [key]: value });
+  const handleFilterChange = (key: string, value: string | null) => {
+    if (value === null) {
+      onFilterChange({ [key]: undefined });
+    } else {
+      onFilterChange({ [key]: value });
+    }
+  };
+
+  const handleReset = () => {
+    onFilterChange({
+      type: undefined,
+      breed: undefined,
+      size: undefined,
+      ageYears: undefined,
+      ageMonths: undefined,
+      gender: undefined,
+    });
   };
 
   return (
-    <Card>
+    <Card className="relative">
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-medium">Filters</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={handleReset}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Reset Filters
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2">
             <Label>Type</Label>
             <Select onValueChange={(value) => handleFilterChange("type", value)}>
@@ -33,7 +63,7 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
             <Label>Age Range</Label>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs">Years</Label>
+                <Label className="text-xs text-muted-foreground">Years</Label>
                 <Select onValueChange={(value) => handleFilterChange("ageYears", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any" />
@@ -47,7 +77,7 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Months</Label>
+                <Label className="text-xs text-muted-foreground">Months</Label>
                 <Select onValueChange={(value) => handleFilterChange("ageMonths", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any" />

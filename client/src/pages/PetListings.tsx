@@ -9,11 +9,24 @@ type FilterState = {
   type?: string;
   breed?: string;
   size?: string;
-  age?: string;
+  gender?: string;
+  ageYears?: string;
+  ageMonths?: string;
 };
 
 export default function PetListings() {
   const [filters, setFilters] = useState<FilterState>({});
+
+  const handleFilterChange = (newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...Object.fromEntries(
+        Object.entries(newFilters).map(([key, value]) => 
+          [key, value === undefined ? undefined : value]
+        )
+      )
+    }));
+  };
 
   const { data: pets, isLoading } = useQuery({
     queryKey: ["pets", filters],
@@ -34,7 +47,7 @@ export default function PetListings() {
         </p>
       </div>
 
-      <PetFilters onFilterChange={setFilters} />
+      <PetFilters onFilterChange={handleFilterChange} />
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

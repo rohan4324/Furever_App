@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "../db";
 import { users, pets, shelters, messages, adoptionApplications } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -49,6 +49,7 @@ export function registerRoutes(app: Express) {
         type: z.enum(["dog", "cat", "other"]).optional(),
         breed: z.string().optional(),
         size: z.enum(["small", "medium", "large"]).optional(),
+        gender: z.enum(["male", "female"]).optional(),
         ageYears: z.string().optional(),
         ageMonths: z.string().optional(),
       });
@@ -56,6 +57,7 @@ export function registerRoutes(app: Express) {
       const filters = filterSchema.parse(req.query);
       const conditions = [];
 
+      // Basic filters
       if (filters.type) {
         conditions.push(eq(pets.type, filters.type));
       }
@@ -65,43 +67,50 @@ export function registerRoutes(app: Express) {
       if (filters.size) {
         conditions.push(eq(pets.size, filters.size));
       }
+      if (filters.gender) {
+        conditions.push(eq(pets.gender, filters.gender));
+      }
+
+      // Age filters using jsonb
       if (filters.ageYears) {
         const minYears = parseInt(filters.ageYears);
         const maxYears = minYears === 6 ? 30 : minYears + 2;
+        
         conditions.push(
           and(
-            db.sql`pets.age->>'years' >= ${minYears}::text`,
-            db.sql`pets.age->>'years' < ${maxYears}::text`
+            sql`CAST((${pets.age}->>'years')::text AS INTEGER) >= ${minYears}`,
+            sql`CAST((${pets.age}->>'years')::text AS INTEGER) < ${maxYears}`
           )
         );
       }
+
       if (filters.ageMonths) {
-        const monthRanges = {
+        const monthRanges: Record<string, [number, number]> = {
           "0": [0, 3],
           "4": [4, 6],
           "7": [7, 9],
           "10": [10, 12]
         };
-        const [minMonths, maxMonths] = monthRanges[filters.ageMonths as keyof typeof monthRanges];
+        
+        const [minMonths, maxMonths] = monthRanges[filters.ageMonths];
         conditions.push(
           and(
-            db.sql`pets.age->>'months' >= ${minMonths}::text`,
-            db.sql`pets.age->>'months' < ${maxMonths}::text`
+            sql`CAST((${pets.age}->>'months')::text AS INTEGER) >= ${minMonths}`,
+            sql`CAST((${pets.age}->>'months')::text AS INTEGER) < ${maxMonths}`
           )
         );
       }
 
+      // Build and execute query
       const query = db.select().from(pets);
-      
       if (conditions.length > 0) {
-        conditions.forEach(condition => {
-          query.where(condition);
-        });
+        query.where(and(...conditions));
       }
 
       const results = await query;
       res.json(results);
     } catch (error) {
+      console.error('Error in /api/pets:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Invalid query parameters" });
       } else {
