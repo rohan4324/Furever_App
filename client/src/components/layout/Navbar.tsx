@@ -19,7 +19,13 @@ export default function Navbar() {
   return (
     <div className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-primary">
+        <Link href="/" className="text-2xl font-bold text-primary flex items-center gap-2">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12,2C6.47,2 2,6.47 2,12s4.47,10 10,10 10-4.47 10-10S17.53,2 12,2z"/>
+            <path d="M9,9c0,1.1-0.9,2-2,2s-2-0.9-2-2s0.9-2,2-2S9,7.9,9,9z"/>
+            <path d="M19,9c0,1.1-0.9,2-2,2s-2-0.9-2-2s0.9-2,2-2S19,7.9,19,9z"/>
+            <path d="M12,17.5c2.33,0 4.31-1.46 5.11-3.5H6.89c0.8,2.04 2.78,3.5 5.11,3.5z"/>
+          </svg>
           FurEver
         </Link>
 

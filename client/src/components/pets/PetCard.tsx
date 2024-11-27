@@ -16,7 +16,7 @@ export default function PetCard({ pet }: PetCardProps) {
   const age = pet.age as { years: number; months: number };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg">
       <div className="aspect-square overflow-hidden">
         <img
           src={pet.images[0]}
@@ -25,7 +25,7 @@ export default function PetCard({ pet }: PetCardProps) {
         />
       </div>
       
-      <CardContent className="p-6">
+      <CardContent className="p-6 animate-fade-in">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-2xl font-semibold">{pet.name}</h3>
           <Badge variant={pet.status === "available" ? "secondary" : "outline"}>
