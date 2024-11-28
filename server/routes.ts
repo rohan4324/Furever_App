@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { db } from "../db";
-import { users, pets, shelters, breeders, messages, adoptionApplications } from "@db/schema";
+import { users, pets, shelters, breeders, messages, adoptionApplications, products, cartItems } from "@db/schema";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -366,9 +366,6 @@ export function registerRoutes(app: Express) {
       const { category, sortBy, petType } = req.query;
       let query = db.select().from(products);
       
-      // Add error logging
-      console.log('Query params:', { category, sortBy, petType });
-      
       if (category) {
         query = query.where(eq(products.category, category as string));
       }
@@ -377,24 +374,22 @@ export function registerRoutes(app: Express) {
         query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
       }
       
-      if (sortBy === "price_asc") {
-        query = query.orderBy(asc(products.price));
-      } else if (sortBy === "price_desc") {
-        query = query.orderBy(desc(products.price));
-      } else if (sortBy === "rating") {
-        query = query.orderBy(desc(products.rating));
+      switch(sortBy) {
+        case "price_asc":
+          query = query.orderBy(asc(products.price));
+          break;
+        case "price_desc":
+          query = query.orderBy(desc(products.price));
+          break;
+        case "rating":
+          query = query.orderBy(desc(products.rating));
+          break;
       }
-
-      // Add query logging
-      const querySQL = query.toSQL();
-      console.log('Generated SQL:', querySQL);
       
       const results = await query;
-      console.log(`Found ${results.length} products`);
       res.json(results);
     } catch (error) {
       console.error('Error in /api/products:', error);
-      // More detailed error message
       res.status(500).json({ 
         error: "Failed to fetch products",
         details: error instanceof Error ? error.message : String(error)

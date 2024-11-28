@@ -12,6 +12,7 @@ export default function ShopCategory() {
   const category = location.split("/").pop() || "food";
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">("rating");
   const [petType, setPetType] = useState<string>("all");
+  const [error, setError] = useState<string | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["products", category, sortBy, petType],
@@ -22,10 +23,27 @@ export default function ShopCategory() {
         petType: petType === "all" ? "" : petType,
       });
       const res = await fetch(`/api/products?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch products");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.details || "Failed to fetch products");
+      }
       return res.json() as Promise<Product[]>;
     },
+    onError: (error) => {
+      setError(error instanceof Error ? error.message : "Failed to fetch products");
+    },
   });
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Error: {error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
