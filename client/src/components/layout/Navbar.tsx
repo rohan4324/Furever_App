@@ -74,17 +74,16 @@ export default function Navbar() {
                       </p>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
+                  <NavigationMenuItem onClick={() => setLocation("/add-pet")}>
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <div className="text-sm font-medium leading-none">Add Pet Listing</div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        List your pet for adoption or sale
+                      </p>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenuContent>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Button
-                variant="ghost"
-                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
-                onClick={() => setLocation("/add-pet")}
-              >
-                Add Pet Listing
-              </Button>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
