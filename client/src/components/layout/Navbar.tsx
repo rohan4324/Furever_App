@@ -34,7 +34,7 @@ export default function Navbar() {
           <span className="ml-2 text-xl font-normal text-foreground">Home</span>
         </Link>
 
-        <NavigationMenu>
+        <NavigationMenu className="navigation-menu">
           <NavigationMenuList>
             <NavigationMenuItem>
               <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground transition-colors data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
