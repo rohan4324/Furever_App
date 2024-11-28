@@ -4,6 +4,8 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuContent,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Link, useLocation } from "wouter";
@@ -35,40 +37,45 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <Button
-                variant="ghost"
-                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
-                onClick={() => setLocation("/pets")}
-              >
-                Find Pets
-              </Button>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Button
-                variant="ghost"
-                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
-                onClick={() => setLocation("/shelters")}
-              >
-                Shelters
-              </Button>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Button
-                variant="ghost"
-                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
-                onClick={() => setLocation("/breeders")}
-              >
-                Breeders
-              </Button>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Button
-                variant="ghost"
-                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
-                onClick={() => setLocation("/quiz")}
-              >
-                Compatibility Quiz
-              </Button>
+              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground">
+                Pet Adoption
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <NavigationMenuList className="grid w-[400px] gap-3 p-4">
+                  <NavigationMenuItem onClick={() => setLocation("/pets")}>
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <div className="text-sm font-medium leading-none">Find Pets</div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Browse available pets for adoption
+                      </p>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem onClick={() => setLocation("/shelters")}>
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <div className="text-sm font-medium leading-none">Shelters</div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Find local animal shelters and NGOs
+                      </p>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem onClick={() => setLocation("/breeders")}>
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <div className="text-sm font-medium leading-none">Breeders</div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Connect with professional pet breeders
+                      </p>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem onClick={() => setLocation("/quiz")}>
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                      <div className="text-sm font-medium leading-none">Compatibility Quiz</div>
+                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                        Find your perfect pet match
+                      </p>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <Button
