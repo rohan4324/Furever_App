@@ -49,6 +49,13 @@ export default function PetFilters({ onFilterChange }: PetFiltersProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
+            <Label>Location</Label>
+            <Input 
+              placeholder="Enter city"
+              onChange={(e) => handleFilterChange("city", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
             <Label>Type</Label>
             <Select onValueChange={(value) => handleFilterChange("type", value)}>
               <SelectTrigger>

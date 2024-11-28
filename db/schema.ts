@@ -22,6 +22,7 @@ export const pets = pgTable("pets", {
   size: text("size", { enum: ["small", "medium", "large"] }).notNull(),
   description: text("description").notNull(),
   images: text("images").array().notNull(),
+  city: text("city").default("Unknown"),
   shelterId: integer("shelter_id").references(() => users.id).notNull(),
   breederId: integer("breeder_id").references(() => users.id),
   isFromBreeder: boolean("is_from_breeder").default(false).notNull(),

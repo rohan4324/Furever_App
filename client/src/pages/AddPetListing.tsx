@@ -40,10 +40,13 @@ export default function AddPetListing() {
   const mutation = useMutation({
     mutationFn: async (data: InsertPet & { imageFiles?: FileList }) => {
       const formData = new FormData();
-      if (data.imageFiles) {
-        Array.from(data.imageFiles).forEach((file: File) => {
-          formData.append("images", file);
-        });
+      if (data.imageFiles && data.imageFiles instanceof FileList) {
+        for (let i = 0; i < data.imageFiles.length; i++) {
+          const file = data.imageFiles.item(i);
+          if (file) {
+            formData.append("images", file);
+          }
+        }
       }
       // Remove imageFiles from data before stringifying
       const { imageFiles, ...petData } = data;
@@ -94,6 +97,16 @@ export default function AddPetListing() {
             {form.formState.errors.name && (
               <p className="text-sm text-destructive">
                 {form.formState.errors.name.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label>City</Label>
+            <Input {...form.register("city")} placeholder="Enter city" />
+            {form.formState.errors.city && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.city.message}
               </p>
             )}
           </div>

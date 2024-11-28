@@ -182,6 +182,7 @@ export function registerRoutes(app: Express) {
         breed: z.string().optional().nullable(),
         size: z.enum(["small", "medium", "large"]).optional().nullable(),
         gender: z.enum(["male", "female"]).optional().nullable(),
+        city: z.string().optional().nullable(),
         ageYears: z.string().optional().nullable(),
         ageMonths: z.string().optional().nullable(),
       }).partial();
@@ -195,6 +196,9 @@ export function registerRoutes(app: Express) {
       }
       if (filters.breed != null) {
         conditions.push(eq(pets.breed, filters.breed));
+      }
+      if (filters.city != null) {
+        conditions.push(eq(pets.city, filters.city));
       }
       if (filters.size != null) {
         conditions.push(eq(pets.size, filters.size));
@@ -251,7 +255,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] | undefined }, res) => {
+  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] }, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
