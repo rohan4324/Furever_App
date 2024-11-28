@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { db } from "../db";
 import { users, pets, shelters, breeders, messages, adoptionApplications } from "@db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -251,17 +251,20 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/pets", upload.array("images", 5), async (req, res) => {
+  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] | undefined }, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     try {
-      const files = req.files as Express.Multer.File[];
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
       const data = JSON.parse(req.body.data);
       
       // Create image URLs
-      const imageUrls = files.map(
+      const imageUrls = req.files.map(
         (file) => `/uploads/${file.filename}`
       );
 
@@ -279,7 +282,7 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       // Clean up uploaded files if there's an error
       if (req.files) {
-        (req.files as Express.Multer.File[]).forEach((file) => {
+        req.files.forEach((file) => {
           fs.unlinkSync(file.path);
         });
       }

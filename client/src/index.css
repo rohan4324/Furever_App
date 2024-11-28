@@ -73,9 +73,11 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+
 .dropdown-container {
   position: relative;
   display: inline-block;
+  z-index: 50;
 }
 
 .dropdown-trigger {
@@ -104,6 +106,7 @@
   visibility: hidden;
   transform: translateY(-10px);
   transition: all 0.2s;
+  z-index: 1000;
 }
 
 .dropdown-content.open {

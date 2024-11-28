@@ -41,11 +41,13 @@ export default function AddPetListing() {
     mutationFn: async (data: InsertPet & { imageFiles?: FileList }) => {
       const formData = new FormData();
       if (data.imageFiles) {
-        Array.from(data.imageFiles).forEach((file) => {
+        Array.from(data.imageFiles).forEach((file: File) => {
           formData.append("images", file);
         });
       }
-      formData.append("data", JSON.stringify(data));
+      // Remove imageFiles from data before stringifying
+      const { imageFiles, ...petData } = data;
+      formData.append("data", JSON.stringify(petData));
 
       const res = await fetch("/api/pets", {
         method: "POST",
