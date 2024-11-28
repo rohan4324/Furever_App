@@ -90,3 +90,4 @@ export type Shelter = z.infer<typeof selectShelterSchema>;
 export type Breeder = z.infer<typeof selectBreederSchema>;
 export type Message = z.infer<typeof selectMessageSchema>;
 export type AdoptionApplication = z.infer<typeof selectAdoptionApplicationSchema>;
+export type InsertPet = z.infer<typeof insertPetSchema>;
