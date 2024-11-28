@@ -374,21 +374,32 @@ export function registerRoutes(app: Express) {
         query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
       }
       
-      switch(sortBy) {
-        case "price_asc":
-          query = db.select().from(products).orderBy(asc(products.price));
-          break;
-        case "price_desc":
-          query = db.select().from(products).orderBy(desc(products.price));
-          break;
-        case "rating":
-          query = db.select().from(products).orderBy(desc(products.rating));
-          break;
-        default:
-          query = db.select().from(products);
+      let baseQuery = db.select().from(products);
+      if (category) {
+        baseQuery = baseQuery.where(eq(products.category, category as string));
       }
       
+      if (petType && petType !== "all") {
+        baseQuery = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      }
+
+      switch(sortBy) {
+        case "price_asc":
+          query = baseQuery.orderBy(asc(products.price));
+          break;
+        case "price_desc":
+          query = baseQuery.orderBy(desc(products.price));
+          break;
+        case "rating":
+          query = baseQuery.orderBy(desc(products.rating));
+          break;
+        default:
+          query = baseQuery;
+      }
+      
+      console.log('Products query:', query.toSQL());
       const results = await query;
+      console.log('Products query result:', results);
       res.json(results);
     } catch (error) {
       console.error('Error in /api/products:', error);
