@@ -69,16 +69,24 @@ export default function Navbar() {
           </div>
           <div className={`dropdown-content ${pawsShopOpen ? 'open' : ''}`}>
             <div className="dropdown-item" onClick={() => setLocation("/shop/food")}>
-              <div className="font-medium">Pet Food</div>
-              <p className="text-sm text-muted-foreground">Premium food for all pets</p>
+              <div className="font-medium">Food & Nutrition</div>
+              <p className="text-sm text-muted-foreground">Premium pet food, specialty diets, and supplements</p>
             </div>
             <div className="dropdown-item" onClick={() => setLocation("/shop/accessories")}>
               <div className="font-medium">Accessories</div>
-              <p className="text-sm text-muted-foreground">Toys, beds, collars and more</p>
+              <p className="text-sm text-muted-foreground">Collars, leashes, beds, crates, and feeding supplies</p>
             </div>
-            <div className="dropdown-item" onClick={() => setLocation("/shop/health")}>
-              <div className="font-medium">Health & Wellness</div>
-              <p className="text-sm text-muted-foreground">Medicines and supplements</p>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/grooming")}>
+              <div className="font-medium">Grooming Supplies</div>
+              <p className="text-sm text-muted-foreground">Shampoos, brushes, and dental care products</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/training")}>
+              <div className="font-medium">Training Aids</div>
+              <p className="text-sm text-muted-foreground">Clickers, treat bags, and training pads</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/safety")}>
+              <div className="font-medium">Safety Products</div>
+              <p className="text-sm text-muted-foreground">GPS trackers, ID tags, and pet-proofing items</p>
             </div>
           </div>
         </div>
