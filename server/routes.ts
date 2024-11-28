@@ -366,6 +366,9 @@ export function registerRoutes(app: Express) {
       const { category, sortBy, petType } = req.query;
       let query = db.select().from(products);
       
+      // Add error logging
+      console.log('Query params:', { category, sortBy, petType });
+      
       if (category) {
         query = query.where(eq(products.category, category as string));
       }
@@ -382,11 +385,20 @@ export function registerRoutes(app: Express) {
         query = query.orderBy(desc(products.rating));
       }
 
+      // Add query logging
+      const querySQL = query.toSQL();
+      console.log('Generated SQL:', querySQL);
+      
       const results = await query;
+      console.log(`Found ${results.length} products`);
       res.json(results);
     } catch (error) {
       console.error('Error in /api/products:', error);
-      res.status(500).json({ error: "Failed to fetch products" });
+      // More detailed error message
+      res.status(500).json({ 
+        error: "Failed to fetch products",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
