@@ -73,6 +73,29 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+.navigation-menu-content {
+  position: relative;
+  z-index: 50;
+}
+
+.navigation-menu-trigger[data-state='open'] {
+  background-color: hsl(16, 90%, 50%);
+  color: white;
+}
+
+.navigation-menu-content[data-state='open'] {
+  animation: none;
+}
+
+/* Ensure continuous hover area */
+.navigation-menu-content::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
 .navigation-menu-content .navigation-menu-link:hover {
   background-color: hsl(16, 90%, 50%) !important;
   color: white !important;

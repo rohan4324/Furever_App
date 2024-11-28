@@ -37,7 +37,7 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground transition-colors">
+              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground transition-colors data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
                 Pet Adoption
               </NavigationMenuTrigger>
               <NavigationMenuContent>
