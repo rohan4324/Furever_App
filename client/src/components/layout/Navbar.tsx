@@ -1,13 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuContent,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
+// No navigation menu imports needed
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,6 +8,7 @@ import AuthModals from "../auth/AuthModals";
 export default function Navbar() {
   const [showAuth, setShowAuth] = useState(false);
   const [authType, setAuthType] = useState<"login" | "register">("login");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   return (
@@ -34,59 +27,37 @@ export default function Navbar() {
           <span className="ml-2 text-xl font-normal text-foreground">Home</span>
         </Link>
 
-        <NavigationMenu className="navigation-menu">
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground transition-colors data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
-                Pet Adoption
-              </NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <NavigationMenuList className="grid w-[400px] gap-3 p-4">
-                  <NavigationMenuItem onClick={() => setLocation("/pets")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
-                      <div className="text-sm font-medium leading-none">Find Pets</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Browse available pets for adoption
-                      </p>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem onClick={() => setLocation("/shelters")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
-                      <div className="text-sm font-medium leading-none">Shelters</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Find local animal shelters and NGOs
-                      </p>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem onClick={() => setLocation("/breeders")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
-                      <div className="text-sm font-medium leading-none">Breeders</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Connect with professional pet breeders
-                      </p>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem onClick={() => setLocation("/quiz")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
-                      <div className="text-sm font-medium leading-none">Compatibility Quiz</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        Find your perfect pet match
-                      </p>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem onClick={() => setLocation("/add-pet")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
-                      <div className="text-sm font-medium leading-none">Add Pet Listing</div>
-                      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        List your pet for adoption or sale
-                      </p>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+        <div 
+          className="dropdown-container"
+          onMouseEnter={() => setIsDropdownOpen(true)}
+          onMouseLeave={() => setIsDropdownOpen(false)}
+        >
+          <div className={`dropdown-trigger ${isDropdownOpen ? 'active' : ''}`}>
+            Pet Adoption
+          </div>
+          <div className={`dropdown-content ${isDropdownOpen ? 'open' : ''}`}>
+            <div className="dropdown-item" onClick={() => setLocation("/pets")}>
+              <div className="font-medium">Find Pets</div>
+              <p className="text-sm text-muted-foreground">Browse available pets for adoption</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/shelters")}>
+              <div className="font-medium">Shelters</div>
+              <p className="text-sm text-muted-foreground">Find local animal shelters and NGOs</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/breeders")}>
+              <div className="font-medium">Breeders</div>
+              <p className="text-sm text-muted-foreground">Connect with professional pet breeders</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/quiz")}>
+              <div className="font-medium">Compatibility Quiz</div>
+              <p className="text-sm text-muted-foreground">Find your perfect pet match</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/add-pet")}>
+              <div className="font-medium">Add Pet Listing</div>
+              <p className="text-sm text-muted-foreground">List your pet for adoption or sale</p>
+            </div>
+          </div>
+        </div>
 
         <div className="space-x-4">
           <Button
