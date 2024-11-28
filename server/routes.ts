@@ -376,14 +376,16 @@ export function registerRoutes(app: Express) {
       
       switch(sortBy) {
         case "price_asc":
-          query = query.orderBy(asc(products.price));
+          query = db.select().from(products).orderBy(asc(products.price));
           break;
         case "price_desc":
-          query = query.orderBy(desc(products.price));
+          query = db.select().from(products).orderBy(desc(products.price));
           break;
         case "rating":
-          query = query.orderBy(desc(products.rating));
+          query = db.select().from(products).orderBy(desc(products.rating));
           break;
+        default:
+          query = db.select().from(products);
       }
       
       const results = await query;
