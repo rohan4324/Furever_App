@@ -255,7 +255,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] }, res) => {
+  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] | undefined }, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -357,6 +357,137 @@ export function registerRoutes(app: Express) {
       res.json(application[0]);
     } catch (error) {
       res.status(400).json({ error: "Failed to submit application" });
+    }
+  });
+
+  // Product routes
+  app.get("/api/products", async (req, res) => {
+    try {
+      const { category, sortBy, petType } = req.query;
+      let query = db.select().from(products);
+      
+      if (category) {
+        query = query.where(eq(products.category, category as string));
+      }
+      
+      if (petType && petType !== "all") {
+        query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      }
+      
+      if (sortBy === "price_asc") {
+        query = query.orderBy(asc(products.price));
+      } else if (sortBy === "price_desc") {
+        query = query.orderBy(desc(products.price));
+      } else if (sortBy === "rating") {
+        query = query.orderBy(desc(products.rating));
+      }
+
+      const results = await query;
+      res.json(results);
+    } catch (error) {
+      console.error('Error in /api/products:', error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.get("/api/products/:id", async (req, res) => {
+    try {
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, parseInt(req.params.id)),
+      });
+      
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
+  // Cart routes
+  app.get("/api/cart", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const cartItems = await db
+        .select({
+          id: cartItems.id,
+          quantity: cartItems.quantity,
+          product: products
+        })
+        .from(cartItems)
+        .leftJoin(products, eq(cartItems.productId, products.id))
+        .where(eq(cartItems.userId, req.session.userId));
+
+      res.json(cartItems);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch cart items" });
+    }
+  });
+
+  app.post("/api/cart", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const cartItem = await db
+        .insert(cartItems)
+        .values({
+          userId: req.session.userId,
+          ...req.body,
+        })
+        .returning();
+      res.json(cartItem[0]);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to add item to cart" });
+    }
+  });
+
+  app.patch("/api/cart/:id", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const cartItem = await db
+        .update(cartItems)
+        .set({ quantity: req.body.quantity })
+        .where(and(
+          eq(cartItems.id, parseInt(req.params.id)),
+          eq(cartItems.userId, req.session.userId)
+        ))
+        .returning();
+      
+      if (!cartItem.length) {
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+      
+      res.json(cartItem[0]);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update cart item" });
+    }
+  });
+
+  app.delete("/api/cart/:id", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      await db
+        .delete(cartItems)
+        .where(and(
+          eq(cartItems.id, parseInt(req.params.id)),
+          eq(cartItems.userId, req.session.userId)
+        ));
+      res.status(204).end();
+    } catch (error) {
+      res.status(400).json({ error: "Failed to remove cart item" });
     }
   });
 }

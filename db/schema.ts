@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, jsonb, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -90,4 +90,42 @@ export type Shelter = z.infer<typeof selectShelterSchema>;
 export type Breeder = z.infer<typeof selectBreederSchema>;
 export type Message = z.infer<typeof selectMessageSchema>;
 export type AdoptionApplication = z.infer<typeof selectAdoptionApplicationSchema>;
+export const products = pgTable("products", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  price: decimal("price").notNull(),
+  category: text("category", { 
+    enum: ["food", "accessories", "grooming", "training", "safety"] 
+  }).notNull(),
+  subCategory: text("sub_category").notNull(),
+  images: text("images").array().notNull(),
+  brand: text("brand").notNull(),
+  stock: integer("stock").notNull(),
+  rating: decimal("rating"),
+  petType: text("pet_type", {
+    enum: ["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"]
+  }).array().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const cartItems = pgTable("cart_items", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Add Zod schemas for new tables
+export const insertProductSchema = createInsertSchema(products);
+export const selectProductSchema = createSelectSchema(products);
+export const insertCartItemSchema = createInsertSchema(cartItems);
+export const selectCartItemSchema = createSelectSchema(cartItems);
+
+// Add types for new tables
+export type Product = z.infer<typeof selectProductSchema>;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type CartItem = z.infer<typeof selectCartItemSchema>;
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type InsertPet = z.infer<typeof insertPetSchema>;
