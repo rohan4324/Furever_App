@@ -37,13 +37,13 @@ export default function Navbar() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground">
+              <NavigationMenuTrigger className="hover:bg-primary hover:text-primary-foreground transition-colors">
                 Pet Adoption
               </NavigationMenuTrigger>
               <NavigationMenuContent>
                 <NavigationMenuList className="grid w-[400px] gap-3 p-4">
                   <NavigationMenuItem onClick={() => setLocation("/pets")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
                       <div className="text-sm font-medium leading-none">Find Pets</div>
                       <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                         Browse available pets for adoption
@@ -51,7 +51,7 @@ export default function Navbar() {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem onClick={() => setLocation("/shelters")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
                       <div className="text-sm font-medium leading-none">Shelters</div>
                       <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                         Find local animal shelters and NGOs
@@ -59,7 +59,7 @@ export default function Navbar() {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem onClick={() => setLocation("/breeders")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
                       <div className="text-sm font-medium leading-none">Breeders</div>
                       <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                         Connect with professional pet breeders
@@ -67,7 +67,7 @@ export default function Navbar() {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem onClick={() => setLocation("/quiz")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
                       <div className="text-sm font-medium leading-none">Compatibility Quiz</div>
                       <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                         Find your perfect pet match
@@ -75,7 +75,7 @@ export default function Navbar() {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem onClick={() => setLocation("/add-pet")}>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-primary hover:text-primary-foreground">
                       <div className="text-sm font-medium leading-none">Add Pet Listing</div>
                       <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                         List your pet for adoption or sale

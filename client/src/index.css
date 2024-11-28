@@ -73,3 +73,7 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
+.navigation-menu-content .navigation-menu-link:hover {
+  background-color: hsl(16, 90%, 50%) !important;
+  color: white !important;
+}
