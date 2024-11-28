@@ -70,6 +70,15 @@ export default function Navbar() {
                 Compatibility Quiz
               </Button>
             </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Button
+                variant="ghost"
+                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
+                onClick={() => setLocation("/add-pet")}
+              >
+                Add Pet Listing
+              </Button>
+            </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
 

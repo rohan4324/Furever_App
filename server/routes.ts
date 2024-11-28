@@ -4,6 +4,39 @@ import { users, pets, shelters, breeders, messages, adoptionApplications } from 
 import { eq, and, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 
@@ -218,21 +251,38 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/pets", async (req, res) => {
+  app.post("/api/pets", upload.array("images", 5), async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     try {
+      const files = req.files as Express.Multer.File[];
+      const data = JSON.parse(req.body.data);
+      
+      // Create image URLs
+      const imageUrls = files.map(
+        (file) => `/uploads/${file.filename}`
+      );
+
       const pet = await db
         .insert(pets)
         .values({
-          ...req.body,
+          ...data,
+          images: imageUrls,
           shelterId: req.session.userId,
+          status: "available",
         })
         .returning();
+
       res.json(pet[0]);
     } catch (error) {
+      // Clean up uploaded files if there's an error
+      if (req.files) {
+        (req.files as Express.Multer.File[]).forEach((file) => {
+          fs.unlinkSync(file.path);
+        });
+      }
       res.status(400).json({ error: "Failed to create pet listing" });
     }
   });

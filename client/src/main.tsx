@@ -10,6 +10,7 @@ import PetListings from "./pages/PetListings";
 import Shelters from "./pages/Shelters";
 import Breeders from "./pages/Breeders";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
+import AddPetListing from "./pages/AddPetListing";
 import Navbar from "./components/layout/Navbar";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
           <Route path="/shelters" component={Shelters} />
           <Route path="/breeders" component={Breeders} />
           <Route path="/quiz" component={CompatibilityQuiz} />
+          <Route path="/add-pet" component={AddPetListing} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>
