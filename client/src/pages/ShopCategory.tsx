@@ -8,8 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 
 export default function ShopCategory() {
-  const [, path] = useLocation();
-  const category = path.split("/").pop() || "food";
+  const [location] = useLocation();
+  const category = location.split("/").pop() || "food";
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">("rating");
   const [petType, setPetType] = useState<string>("all");
 

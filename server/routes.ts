@@ -1,7 +1,7 @@
 import type { Express, Request } from "express";
 import { db } from "../db";
 import { users, pets, shelters, breeders, messages, adoptionApplications } from "@db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import multer from "multer";
