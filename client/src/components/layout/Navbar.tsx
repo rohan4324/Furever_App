@@ -8,6 +8,8 @@ export default function Navbar() {
   const [showAuth, setShowAuth] = useState(false);
   const [authType, setAuthType] = useState<"login" | "register">("login");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [pawsShopOpen, setPawsShopOpen] = useState(false);
+  const [furstStepsOpen, setFurstStepsOpen] = useState(false);
   const [, setLocation] = useLocation();
 
   return (
@@ -53,6 +55,54 @@ export default function Navbar() {
             <div className="dropdown-item" onClick={() => setLocation("/add-pet")}>
               <div className="font-medium">Add Pet Listing</div>
               <p className="text-sm text-muted-foreground">List your pet for adoption or sale</p>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className="dropdown-container"
+          onMouseEnter={() => setPawsShopOpen(true)}
+          onMouseLeave={() => setPawsShopOpen(false)}
+        >
+          <div className={`dropdown-trigger ${pawsShopOpen ? 'active' : ''}`}>
+            Paws & Shop
+          </div>
+          <div className={`dropdown-content ${pawsShopOpen ? 'open' : ''}`}>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/food")}>
+              <div className="font-medium">Pet Food</div>
+              <p className="text-sm text-muted-foreground">Premium food for all pets</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/accessories")}>
+              <div className="font-medium">Accessories</div>
+              <p className="text-sm text-muted-foreground">Toys, beds, collars and more</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/shop/health")}>
+              <div className="font-medium">Health & Wellness</div>
+              <p className="text-sm text-muted-foreground">Medicines and supplements</p>
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className="dropdown-container"
+          onMouseEnter={() => setFurstStepsOpen(true)}
+          onMouseLeave={() => setFurstStepsOpen(false)}
+        >
+          <div className={`dropdown-trigger ${furstStepsOpen ? 'active' : ''}`}>
+            Furst Steps
+          </div>
+          <div className={`dropdown-content ${furstStepsOpen ? 'open' : ''}`}>
+            <div className="dropdown-item" onClick={() => setLocation("/guides")}>
+              <div className="font-medium">Pet Care Guides</div>
+              <p className="text-sm text-muted-foreground">Essential tips for new pet parents</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/training")}>
+              <div className="font-medium">Training Resources</div>
+              <p className="text-sm text-muted-foreground">Professional training tips</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/vet-connect")}>
+              <div className="font-medium">Vet Connect</div>
+              <p className="text-sm text-muted-foreground">Find veterinarians near you</p>
             </div>
           </div>
         </div>
