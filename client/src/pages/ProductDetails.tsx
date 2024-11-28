@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@db/schema";
@@ -16,8 +16,8 @@ import {
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
-  const [, params] = useLocation();
-  const productId = params.split("/").pop();
+  const [params] = useParams();
+  const productId = params?.id;  // Access id from params object
   const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({

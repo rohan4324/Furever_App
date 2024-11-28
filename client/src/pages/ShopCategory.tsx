@@ -99,7 +99,12 @@ export default function ShopCategory() {
             <Card key={product.id} className="overflow-hidden group">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src={product.images[0].startsWith('/') ? product.images[0] : `/images/products/${product.images[0]}`}
+                  src={product.images[0].startsWith('http') 
+                    ? product.images[0]  // Use direct URL if it starts with http
+                    : product.images[0].startsWith('/') 
+                      ? product.images[0]  // Use as is if starts with /
+                      : `/images/products/${product.images[0]}`  // Otherwise prepend path
+                  }
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
@@ -116,7 +121,7 @@ export default function ShopCategory() {
                   <span className="font-medium">${product.price}</span>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = `/shop/product/${product.id}`}
+                    onClick={() => navigate(`/shop/product/${product.id}`)}
                   >
                     View Details
                   </Button>
