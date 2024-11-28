@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-// No navigation menu imports needed
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
@@ -24,7 +23,6 @@ export default function Navbar() {
           }}>
             FurEver
           </span>
-          <span className="ml-2 text-xl font-normal text-foreground">Home</span>
         </Link>
 
         <div 
