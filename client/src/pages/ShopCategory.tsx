@@ -9,7 +9,7 @@ import { useState } from "react";
 
 export default function ShopCategory() {
   const [location] = useLocation();
-  const category = location.split("/").pop() || "food";
+  const category = location.split("/")[2] || "food";
   const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">("rating");
   const [petType, setPetType] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +102,9 @@ export default function ShopCategory() {
                   src={product.images[0]}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/products/placeholder.jpg';
+                  }}
                 />
               </div>
               <CardContent className="p-4">

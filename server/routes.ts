@@ -420,7 +420,7 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      const cartItems = await db
+      const items = await db
         .select({
           id: cartItems.id,
           quantity: cartItems.quantity,
@@ -430,7 +430,7 @@ export function registerRoutes(app: Express) {
         .leftJoin(products, eq(cartItems.productId, products.id))
         .where(eq(cartItems.userId, req.session.userId));
 
-      res.json(cartItems);
+      res.json(items);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch cart items" });
     }
