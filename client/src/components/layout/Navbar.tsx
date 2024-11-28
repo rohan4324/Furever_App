@@ -37,7 +37,7 @@ export default function Navbar() {
             <NavigationMenuItem>
               <Button
                 variant="ghost"
-                className={navigationMenuTriggerStyle()}
+                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
                 onClick={() => setLocation("/pets")}
               >
                 Find Pets
@@ -46,7 +46,7 @@ export default function Navbar() {
             <NavigationMenuItem>
               <Button
                 variant="ghost"
-                className={navigationMenuTriggerStyle()}
+                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
                 onClick={() => setLocation("/shelters")}
               >
                 Shelters
@@ -55,7 +55,7 @@ export default function Navbar() {
             <NavigationMenuItem>
               <Button
                 variant="ghost"
-                className={navigationMenuTriggerStyle()}
+                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
                 onClick={() => setLocation("/breeders")}
               >
                 Breeders
@@ -64,7 +64,7 @@ export default function Navbar() {
             <NavigationMenuItem>
               <Button
                 variant="ghost"
-                className={navigationMenuTriggerStyle()}
+                className={`${navigationMenuTriggerStyle()} hover:bg-primary hover:text-primary-foreground`}
                 onClick={() => setLocation("/quiz")}
               >
                 Compatibility Quiz

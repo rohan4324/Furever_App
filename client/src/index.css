@@ -24,6 +24,13 @@
   color: white;
 }
 
+[role="navigation"] .button:hover,
+[role="navigation"] .btn:hover,
+.navigation-menu-trigger:hover {
+  background-color: hsl(16, 90%, 50%) !important;
+  color: white !important;
+}
+
 .card {
   transition: all 0.3s ease;
 }
