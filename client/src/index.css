@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,7 +20,7 @@
 .button:hover, .btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: var(--primary);
+  background-color: hsl(16, 90%, 50%);
   color: white;
 }
 

@@ -1,3 +1,4 @@
+// Import necessary dependencies
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,22 +11,29 @@ interface BreederCardProps {
   breeder: Breeder & { user: User };
 }
 
-export default function BreederCard({ breeder }: BreederCardProps) {
+// Ensure the component is exported correctly
+const BreederCard: React.FC<BreederCardProps> = ({ breeder }) => {
   const [showChat, setShowChat] = useState(false);
-  
+
+  // Fixing type conversion issue
+  const specializations: string[] =
+    breeder.specializations as unknown as string[];
+
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-start gap-6">
           <img
-            src={`https://api.dicebear.com/7.x/initials/svg?seed=${breeder.user?.name ?? 'Unknown Breeder'}`}
-            alt={breeder.user?.name ?? 'Unknown Breeder'}
+            src={`https://api.dicebear.com/7.x/initials/svg?seed=${breeder.user?.name ?? "Unknown Breeder"}`}
+            alt={breeder.user?.name ?? "Unknown Breeder"}
             className="w-24 h-24 rounded-lg object-cover"
           />
-          
+
           <div className="flex-1">
             <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-semibold">{breeder.user?.name ?? 'Unknown Breeder'}</h3>
+              <h3 className="text-xl font-semibold">
+                {breeder.user?.name ?? "Unknown Breeder"}
+              </h3>
               {breeder.verificationStatus && (
                 <Badge variant="secondary">Verified Breeder</Badge>
               )}
@@ -37,7 +45,7 @@ export default function BreederCard({ breeder }: BreederCardProps) {
 
             <div className="space-y-1 text-sm mb-4">
               <p>
-                <strong>Specializations:</strong> {(breeder.specializations as string[]).join(", ")}
+                <strong>Specializations:</strong> {specializations.join(", ")}
               </p>
               <p>
                 <strong>Address:</strong> {breeder.address}
@@ -76,4 +84,6 @@ export default function BreederCard({ breeder }: BreederCardProps) {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default BreederCard; // Ensure you export it correctly
