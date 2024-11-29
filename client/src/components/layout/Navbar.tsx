@@ -112,6 +112,10 @@ export default function Navbar() {
               <div className="font-medium">Health Check-Ups</div>
               <p className="text-sm text-muted-foreground">Schedule regular health check-ups</p>
             </div>
+            <div className="dropdown-item" onClick={() => setLocation("/health/medical-history")}>
+              <div className="font-medium">Medical History</div>
+              <p className="text-sm text-muted-foreground">Track and manage pet medical records</p>
+            </div>
             <div className="dropdown-item" onClick={() => setLocation("/vet-connect")}>
               <div className="font-medium">Vet Connect</div>
               <p className="text-sm text-muted-foreground">Find veterinarians near you</p>
