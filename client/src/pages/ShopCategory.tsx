@@ -19,21 +19,26 @@ import { Input } from "@/components/ui/input";
 export default function ShopCategory() {
   const [location] = useLocation();
   const category = location.split("/")[2] || "food";
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">(
-    "rating",
-  );
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">("rating");
   const [petType, setPetType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Add auth check query
+  const { data: authData } = useQuery({
+    queryKey: ["auth"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/check", {
+        credentials: "include"
+      });
+      if (!res.ok) return null;
+      return res.json();
+    }
+  });
+
   const handleBuyNow = async (productId: number) => {
-    const res = await fetch('/api/auth/check', {
-      credentials: 'include'
-    });
-    
-    if (!res.ok) {
+    if (!authData) {
       toast({
         title: "Authentication required",
         description: "Please login to continue with purchase",
@@ -42,18 +47,23 @@ export default function ShopCategory() {
       window.location.assign('/login');
       return;
     }
-    
     window.location.assign('/checkout');
   };
 
   const addToCartMutation = useMutation({
     mutationFn: async (productId: number) => {
+      if (!authData) {
+        window.location.assign('/login');
+        throw new Error("Please login to add items to cart");
+      }
+      
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, quantity: 1 }),
-        credentials: 'include' // Add this to include session cookie
+        credentials: 'include'
       });
+      
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to add to cart");
@@ -73,18 +83,10 @@ export default function ShopCategory() {
         description: error instanceof Error ? error.message : "Failed to add item to cart",
         variant: "destructive",
       });
-      if (error instanceof Error && error.message === "Unauthorized") {
-        // Redirect to login if user is not authenticated
-        window.location.assign('/login');
-      }
     },
   });
 
-  const {
-    data: products,
-    isLoading,
-    error: fetchError,
-  } = useQuery({
+  const { data: products, isLoading, error: fetchError } = useQuery({
     queryKey: ["products", category, sortBy, petType],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -104,7 +106,7 @@ export default function ShopCategory() {
   if (fetchError) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-500">Error: {fetchError.message}</p>
+        <p className="text-red-500">Error: {fetchError instanceof Error ? fetchError.message : "Failed to fetch products"}</p>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Try Again
         </Button>
@@ -114,12 +116,10 @@ export default function ShopCategory() {
 
   return (
     <div className="space-y-8">
-      {/* Add cart icon and count at the top */}
       <div className="flex flex-col gap-4">
         <div className="flex justify-end items-center gap-2">
           <Link to="/cart" className="flex items-center gap-2 hover:text-primary">
             <ShoppingCart className="h-5 w-5" />
-            {/* Add cart count here if available */}
           </Link>
         </div>
         <div className="w-full max-w-md mx-auto">
@@ -160,10 +160,7 @@ export default function ShopCategory() {
             </SelectContent>
           </Select>
 
-          <Select
-            value={sortBy}
-            onValueChange={(value: any) => setSortBy(value)}
-          >
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -196,7 +193,7 @@ export default function ShopCategory() {
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
-                    const target = e.currentTarget;
+                    const target = e.currentTarget as HTMLImageElement;
                     target.onerror = null;
                     target.src = `https://placehold.co/600x400?text=${encodeURIComponent(product.name)}`;
                   }}

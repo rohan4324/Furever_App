@@ -91,7 +91,7 @@ export default function ProductDetails() {
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {product.images.slice(1).map((image, index) => (
+            {product.images.slice(1).map((image: string, index: number) => (
               <img
                 key={index}
                 src={image}
@@ -158,7 +158,7 @@ export default function ProductDetails() {
               </li>
               <li>
                 <span className="font-medium">Suitable for:</span>{" "}
-                {product.petType.join(", ")}
+                {Array.isArray(product.petType) ? product.petType.join(", ") : product.petType}
               </li>
             </ul>
           </div>
