@@ -155,7 +155,7 @@ export default function Cart() {
                     </SelectContent>
                   </Select>
                   <p className="font-medium">
-                    ${(item.product.price * item.quantity).toFixed(2)}
+                    ${(Number(item.product.price) * item.quantity).toFixed(2)}
                   </p>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { users, pets, shelters, breeders, messages, adoptionApplications, produc
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import multer from "multer";
+import multer, { File } from "multer";
 import path from "path";
 import fs from "fs";
 
@@ -286,7 +286,7 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       // Clean up uploaded files if there's an error
       if (req.files) {
-        req.files.forEach((file) => {
+        req.files.forEach((file: File) => {
           fs.unlinkSync(file.path);
         });
       }
