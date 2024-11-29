@@ -182,7 +182,26 @@ export default function Cart() {
                 <span>${total.toFixed(2)}</span>
               </div>
             </div>
-            <Button className="w-full">Proceed to Checkout</Button>
+            <Button 
+              className="w-full"
+              onClick={() => {
+                if (!cartItems?.length) {
+                  toast({
+                    title: "Cart is empty",
+                    description: "Add some items to your cart first",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                // For now, just show a toast until payment processing is implemented
+                toast({
+                  title: "Checkout",
+                  description: "Payment processing will be implemented soon",
+                });
+              }}
+            >
+              Proceed to Checkout
+            </Button>
           </div>
         </div>
       </div>

@@ -47,7 +47,19 @@ export default function ShopCategory() {
       window.location.assign('/login');
       return;
     }
-    window.location.assign('/checkout');
+
+    try {
+      // First add to cart
+      await addToCartMutation.mutateAsync(productId);
+      // Then navigate to cart
+      window.location.assign('/cart');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process purchase. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const addToCartMutation = useMutation({
