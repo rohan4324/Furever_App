@@ -537,23 +537,23 @@ export function registerRoutes(app: Express) {
     let query = baseQuery;
     
     if (category) {
-      query = query.where(eq(products.category, category));
+      query = baseQuery.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = query.where(sql<boolean>`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      query = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]`);
     }
 
-    // Apply sorting with proper type handling using type-safe orderBy
+    // Apply sorting with proper type handling
     if (sortBy) {
       const orderByClause = 
-        sortBy === "price_asc" ? [asc(products.price)] :
-        sortBy === "price_desc" ? [desc(products.price)] :
-        sortBy === "rating" ? [desc(products.rating)] :
+        sortBy === "price_asc" ? asc(products.price) :
+        sortBy === "price_desc" ? desc(products.price) :
+        sortBy === "rating" ? desc(products.rating) :
         undefined;
       
       if (orderByClause) {
-        query = query.orderBy(...orderByClause);
+        query = baseQuery.orderBy(orderByClause);
       }
     }
     
@@ -869,8 +869,8 @@ export function registerRoutes(app: Express) {
           clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
           user: {
             id: users.id,
-            name: sql<string>`${users.name}::text`,
-            email: sql<string>`${users.email}::text`
+            name: users.name,
+            email: users.email
           }
         }
       })
