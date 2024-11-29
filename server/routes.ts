@@ -642,8 +642,8 @@ export function registerRoutes(app: Express) {
         rating: veterinarians.rating,
         user: {
           id: users.id,
-          name: users.name.toString(),
-          email: users.email.toString()
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
         }
       })
       .from(veterinarians)
