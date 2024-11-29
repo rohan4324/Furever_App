@@ -548,16 +548,15 @@ export function registerRoutes(app: Express) {
 
     // Apply sorting with proper type handling
     if (sortBy) {
-      const baseQuery = db.select().from(products);
       switch(sortBy) {
         case "price_asc":
-          query = baseQuery.orderBy(asc(products.price));
+          query = query.orderBy(asc(products.price));
           break;
         case "price_desc":
-          query = baseQuery.orderBy(desc(products.price));
+          query = query.orderBy(desc(products.price));
           break;
         case "rating":
-          query = baseQuery.orderBy(desc(products.rating));
+          query = query.orderBy(desc(products.rating));
           break;
       }
     }
@@ -846,15 +845,16 @@ export function registerRoutes(app: Express) {
         dateTime: vetAppointments.dateTime,
         type: vetAppointments.type,
         status: vetAppointments.status,
-        notes: vetAppointments.notes,
+        notes: sql<string>`${vetAppointments.notes}::text`,
+        questionnaire: vetAppointments.questionnaire,
         veterinarian: {
           id: veterinarians.id,
           clinicAddress: veterinarians.clinicAddress,
           clinicPhone: veterinarians.clinicPhone,
           user: {
             id: users.id,
-            name: users.name,
-            email: users.email
+            name: sql<string>`${users.name}::text`,
+            email: sql<string>`${users.email}::text`
           }
         }
       })
