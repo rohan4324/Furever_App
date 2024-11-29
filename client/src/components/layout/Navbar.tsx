@@ -108,10 +108,7 @@ export default function Navbar() {
               <div className="font-medium">Vaccination Schedule</div>
               <p className="text-sm text-muted-foreground">Track and manage pet vaccinations</p>
             </div>
-            <div className="dropdown-item" onClick={() => setLocation("/health/checkups")}>
-              <div className="font-medium">Health Check-Ups</div>
-              <p className="text-sm text-muted-foreground">Schedule regular health check-ups</p>
-            </div>
+            
             <div className="dropdown-item" onClick={() => setLocation("/health/medical-history")}>
               <div className="font-medium">Medical History</div>
               <p className="text-sm text-muted-foreground">Track and manage pet medical records</p>
