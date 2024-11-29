@@ -129,3 +129,88 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type CartItem = z.infer<typeof selectCartItemSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type InsertPet = z.infer<typeof insertPetSchema>;
+
+// Health Services Tables
+export const veterinarians = pgTable("veterinarians", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  specializations: text("specializations").array().notNull(),
+  qualifications: text("qualifications").array().notNull(),
+  clinicAddress: text("clinic_address").notNull(),
+  clinicPhone: text("clinic_phone").notNull(),
+  availableSlots: jsonb("available_slots").notNull(),
+  rating: decimal("rating"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const vaccinations = pgTable("vaccinations", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  name: text("name").notNull(),
+  date: timestamp("date").notNull(),
+  nextDueDate: timestamp("next_due_date"),
+  veterinarianId: integer("veterinarian_id").references(() => veterinarians.id),
+  notes: text("notes"),
+  documentUrl: text("document_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const vetAppointments = pgTable("vet_appointments", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  veterinarianId: integer("veterinarian_id").references(() => veterinarians.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  dateTime: timestamp("date_time").notNull(),
+  type: text("type", { enum: ["checkup", "vaccination", "emergency", "grooming", "consultation"] }).notNull(),
+  status: text("status", { enum: ["scheduled", "completed", "cancelled", "no_show"] }).default("scheduled").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const petInsurance = pgTable("pet_insurance", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  provider: text("provider").notNull(),
+  policyNumber: text("policy_number").notNull(),
+  coverageDetails: jsonb("coverage_details").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status", { enum: ["active", "expired", "cancelled"] }).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const healthRecords = pgTable("health_records", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  petId: integer("pet_id").references(() => pets.id).notNull(),
+  type: text("type", { enum: ["condition", "medication", "allergy", "surgery", "test_result"] }).notNull(),
+  description: text("description").notNull(),
+  date: timestamp("date").notNull(),
+  veterinarianId: integer("veterinarian_id").references(() => veterinarians.id),
+  documentUrl: text("document_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Add Zod schemas for health services tables
+export const insertVeterinarianSchema = createInsertSchema(veterinarians);
+export const selectVeterinarianSchema = createSelectSchema(veterinarians);
+export const insertVaccinationSchema = createInsertSchema(vaccinations);
+export const selectVaccinationSchema = createSelectSchema(vaccinations);
+export const insertVetAppointmentSchema = createInsertSchema(vetAppointments);
+export const selectVetAppointmentSchema = createSelectSchema(vetAppointments);
+export const insertPetInsuranceSchema = createInsertSchema(petInsurance);
+export const selectPetInsuranceSchema = createSelectSchema(petInsurance);
+export const insertHealthRecordSchema = createInsertSchema(healthRecords);
+export const selectHealthRecordSchema = createSelectSchema(healthRecords);
+
+// Add types for health services tables
+export type Veterinarian = z.infer<typeof selectVeterinarianSchema>;
+export type InsertVeterinarian = z.infer<typeof insertVeterinarianSchema>;
+export type Vaccination = z.infer<typeof selectVaccinationSchema>;
+export type InsertVaccination = z.infer<typeof insertVaccinationSchema>;
+export type VetAppointment = z.infer<typeof selectVetAppointmentSchema>;
+export type InsertVetAppointment = z.infer<typeof insertVetAppointmentSchema>;
+export type PetInsurance = z.infer<typeof selectPetInsuranceSchema>;
+export type InsertPetInsurance = z.infer<typeof insertPetInsuranceSchema>;
+export type HealthRecord = z.infer<typeof selectHealthRecordSchema>;
+export type InsertHealthRecord = z.infer<typeof insertHealthRecordSchema>;

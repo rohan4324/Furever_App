@@ -1,0 +1,164 @@
+Health Services
+Vaccination Schedule Setup with Reminders
+Vaccination Calendar:
+Pre-loaded vaccination schedules based on pet species, breed, and age.
+Ability to customize based on veterinarian recommendations.
+Reminders and Notifications:
+Automatic alerts before upcoming vaccinations.
+Option to sync with the device calendar.
+Record Keeping:
+Digital storage of vaccination records.
+Upload feature for vaccination certificates and vet notes.
+Educational Content:
+Information on each vaccine’s purpose and importance.
+FAQs about side effects and aftercare.
+Booking Initial Health Check-Ups with Nearby Veterinarians
+Veterinarian Directory:
+List of nearby vets with profiles, qualifications, and specializations.
+Ratings and reviews from other pet owners.
+Appointment Booking:
+Real-time availability calendars.
+Option to select in-clinic or at-home visits.
+Consultation Details:
+Estimated costs.
+Preparatory instructions for visits.
+Payment Integration:
+Secure in-app payment or pay at clinic.
+Follow-Up:
+Post-visit summaries.
+Prescription management.
+User Journey for Health Services
+Persona: Raj, who just bought a kitten in Bengaluru.
+
+Setting Up Pet Profile:
+Raj adds his kitten’s details: 3-month-old female Siamese.
+Vaccination Schedule:
+The app automatically generates a vaccination schedule.
+Raj reviews the schedule and confirms.
+Receiving Reminders:
+Raj gets a notification that his kitten’s first vaccine is due in a week.
+Finding a Veterinarian:
+He navigates to “Health Services” and selects “Find a Vet.”
+He filters for veterinarians specializing in cats within 5 km.
+Reviewing Options:
+Raj reads profiles and selects Dr. Mehta, who has high ratings.
+Booking an Appointment:
+He checks Dr. Mehta’s availability and books a slot for Saturday afternoon.
+He opts for an in-clinic visit.
+Preparation:
+The app provides instructions on transporting his kitten safely.
+Appointment Confirmation:
+He receives a confirmation and the clinic’s address.
+Post-Visit Actions:
+After the appointment, Dr. Mehta uploads the vaccination record to the app.
+Raj schedules the next vaccine as per the vet’s recommendation.
+Continued Care:
+The app reminds him of upcoming vaccinations and health check-ups.
+Pet Insurance
+Comparison Tool for Different Insurance Plans
+Insurance Providers:
+Partnerships with reputable pet insurance companies in India.
+Plan Listings:
+Variety of plans covering accidents, illnesses, routine care.
+Details on coverage limits, exclusions, premiums.
+Comparison Feature:
+Side-by-side comparison of selected plans.
+Filters based on coverage type, cost, and pet age/species.
+Educational Resources:
+Articles explaining pet insurance benefits.
+Glossary of insurance terms.
+Customer Reviews:
+Feedback from other pet owners on their experiences.
+In-App Enrollment Process
+Application Form:
+Pre-filled with pet’s profile information.
+Additional questions as required by the insurer.
+Document Upload:
+Option to upload medical records or vet certificates.
+Quotation and Payment:
+Instant premium quotes.
+Secure payment gateways for policy purchase.
+Policy Management:
+Digital storage of policy documents.
+Renewal reminders and easy renewal process.
+Claims Process:
+Guidance on how to file claims.
+Tracking claim status within the app.
+User Journey for Pet Insurance
+Persona: Sunita, an experienced pet owner in Hyderabad with a new Golden Retriever puppy.
+Considering Insurance:
+Sunita wants to ensure her puppy is protected against unforeseen health issues.
+Exploring Options:
+She selects “Pet Insurance” from the app menu.
+Using the Comparison Tool:
+She inputs her puppy’s details: 4-month-old male Golden Retriever.
+She selects coverage preferences: accidents, illnesses, routine care.
+Reviewing Plans:
+The app displays several plans from different insurers.
+Sunita compares three plans side-by-side.
+Reading Reviews:
+She reads reviews from other users about their claim experiences.
+Selecting a Plan:
+Sunita chooses a plan that offers comprehensive coverage at a reasonable premium.
+Enrollment Process:
+She completes the application form, which is pre-filled with her and her pet’s information.
+She uploads the recent health check-up report.
+Payment:
+She pays the premium using her preferred payment method.
+Policy Confirmation:
+Sunita receives a digital copy of the policy.
+The app sets up reminders for policy renewal.
+Future Claims:
+If needed, Sunita can file claims directly through the app.
+Home Preparation Resources
+Articles and Checklists for Pet-Proofing Homes
+Educational Content:
+Articles on common household hazards.
+Tips for creating a safe environment for different pets.
+Interactive Checklists:
+Room-by-room guides for pet-proofing.
+Ability to check off completed tasks.
+Safety Product Recommendations:
+Suggestions for gates, covers, locks.
+Links to purchase recommended items in the Essential Supplies Store.
+Multimedia Guides:
+Videos demonstrating pet-proofing techniques.
+Infographics highlighting key areas.
+Setup Guides for Various Pets
+Species-Specific Guides:
+Dogs, cats, birds, small mammals, reptiles, fish.
+Breed Considerations:
+Tailored advice based on breed characteristics and needs.
+Housing and Environment:
+Ideal living conditions (temperature, space requirements).
+Enclosure setup for caged or tank animals.
+Initial Training Tips:
+Basic commands, litter training, socialization.
+Health and Hygiene:
+Bathing schedules, dental care, parasite prevention.
+Chatbot to answer any questions (AI based chat bot)
+User Journey for Home Preparation Resources
+Persona: Karan, a college student in Pune preparing to bring home a pet rabbit.
+Seeking Guidance:
+Karan wants to ensure he’s fully prepared for his new rabbit.
+Accessing Resources:
+He navigates to “Home Preparation” in the app.
+Selecting Pet Type:
+He chooses “Small Mammals” and then “Rabbits.”
+Reading Articles:
+Karan reads about the essentials of rabbit care.
+He learns about dietary needs and common health issues.
+Using the Pet-Proofing Checklist:
+He accesses a checklist specifically for rabbit-proofing his home.
+Tasks include covering electrical cords, securing toxic plants, and blocking small spaces.
+Shopping for Supplies:
+The checklist recommends certain products.
+Karan adds a rabbit hutch, water bottle, and chew toys to his cart.
+Watching Setup Videos:
+He watches a video on setting up a comfortable and safe enclosure.
+Preparing His Home:
+Karan follows the checklist, marking tasks as he completes them.
+Final Review:
+The app confirms that he’s completed all recommended preparations.
+Bringing Home the Rabbit:
+Feeling confident, Karan brings his new pet home.

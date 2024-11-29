@@ -15,6 +15,8 @@ import ShopCategory from "./pages/ShopCategory";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Navbar from "./components/layout/Navbar";
+import Vaccination from "./pages/health/Vaccination";
+import VetDirectory from "./pages/health/VetDirectory";
 
 function Router() {
   return (
@@ -31,6 +33,8 @@ function Router() {
           <Route path="/shop/:category" component={ShopCategory} />
           <Route path="/shop/product/:id" component={ProductDetails} />
           <Route path="/cart" component={Cart} />
+          <Route path="/health/vaccination" component={Vaccination} />
+          <Route path="/health/vet-directory" component={VetDirectory} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>

@@ -562,4 +562,161 @@ export function registerRoutes(app: Express) {
       res.status(400).json({ error: "Failed to remove cart item" });
     }
   });
+
+  // Health Services Routes
+  app.get("/api/veterinarians", async (req, res) => {
+    try {
+      const results = await db
+        .select({
+          id: veterinarians.id,
+          userId: veterinarians.userId,
+          specializations: veterinarians.specializations,
+          qualifications: veterinarians.qualifications,
+          clinicAddress: veterinarians.clinicAddress,
+          clinicPhone: veterinarians.clinicPhone,
+          availableSlots: veterinarians.availableSlots,
+          rating: veterinarians.rating,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email
+          }
+        })
+        .from(veterinarians)
+        .leftJoin(users, eq(veterinarians.userId, users.id));
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching veterinarians:', error);
+      res.status(500).json({ error: "Failed to fetch veterinarians" });
+    }
+  });
+
+  app.post("/api/veterinarians", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const vet = await db
+        .insert(veterinarians)
+        .values({
+          userId: req.session.userId,
+          ...req.body,
+        })
+        .returning();
+      res.json(vet[0]);
+    } catch (error) {
+      console.error('Error creating veterinarian:', error);
+      res.status(400).json({ error: "Failed to create veterinarian profile" });
+    }
+  });
+
+  app.get("/api/vaccinations/:petId", async (req, res) => {
+    try {
+      const results = await db
+        .select()
+        .from(vaccinations)
+        .where(eq(vaccinations.petId, parseInt(req.params.petId)));
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching vaccinations:', error);
+      res.status(500).json({ error: "Failed to fetch vaccination records" });
+    }
+  });
+
+  app.post("/api/vaccinations", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const vaccination = await db
+        .insert(vaccinations)
+        .values(req.body)
+        .returning();
+      res.json(vaccination[0]);
+    } catch (error) {
+      console.error('Error creating vaccination record:', error);
+      res.status(400).json({ error: "Failed to create vaccination record" });
+    }
+  });
+
+  app.get("/api/appointments", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const results = await db
+        .select({
+          appointment: vetAppointments,
+          veterinarian: {
+            id: veterinarians.id,
+            clinicAddress: veterinarians.clinicAddress,
+            clinicPhone: veterinarians.clinicPhone,
+            user: {
+              name: users.name
+            }
+          }
+        })
+        .from(vetAppointments)
+        .leftJoin(veterinarians, eq(vetAppointments.veterinarianId, veterinarians.id))
+        .leftJoin(users, eq(veterinarians.userId, users.id))
+        .where(eq(vetAppointments.userId, req.session.userId));
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      res.status(500).json({ error: "Failed to fetch appointments" });
+    }
+  });
+
+  app.post("/api/appointments", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const appointment = await db
+        .insert(vetAppointments)
+        .values({
+          userId: req.session.userId,
+          ...req.body,
+        })
+        .returning();
+      res.json(appointment[0]);
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      res.status(400).json({ error: "Failed to create appointment" });
+    }
+  });
+
+  app.get("/api/health-records/:petId", async (req, res) => {
+    try {
+      const results = await db
+        .select()
+        .from(healthRecords)
+        .where(eq(healthRecords.petId, parseInt(req.params.petId)));
+      res.json(results);
+    } catch (error) {
+      console.error('Error fetching health records:', error);
+      res.status(500).json({ error: "Failed to fetch health records" });
+    }
+  });
+
+  app.post("/api/health-records", async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const record = await db
+        .insert(healthRecords)
+        .values(req.body)
+        .returning();
+      res.json(record[0]);
+    } catch (error) {
+      console.error('Error creating health record:', error);
+      res.status(400).json({ error: "Failed to create health record" });
+    }
+  });
 }
