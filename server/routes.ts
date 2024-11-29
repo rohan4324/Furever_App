@@ -654,7 +654,12 @@ export function registerRoutes(app: Express) {
     try {
       const results = await db
         .select({
-          appointment: vetAppointments,
+          id: vetAppointments.id,
+          petId: vetAppointments.petId,
+          dateTime: vetAppointments.dateTime,
+          type: vetAppointments.type,
+          status: vetAppointments.status,
+          notes: vetAppointments.notes,
           veterinarian: {
             id: veterinarians.id,
             clinicAddress: veterinarians.clinicAddress,
