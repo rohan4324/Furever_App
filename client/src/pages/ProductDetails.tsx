@@ -91,7 +91,7 @@ export default function ProductDetails() {
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {Array.isArray(product.images) && product.images.slice(1).map((image: string, index: number) => (
+            {(Array.isArray(product.images) ? product.images.slice(1) : []).map((image: string, index: number) => (
               <img
                 key={index}
                 src={image}

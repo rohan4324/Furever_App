@@ -73,7 +73,7 @@ export default function Cart() {
   });
 
   const total = cartItems?.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + Number(item.product.price) * item.quantity,
     0
   ) ?? 0;
 
