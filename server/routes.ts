@@ -548,16 +548,14 @@ export function registerRoutes(app: Express) {
 
     // Apply sorting with proper type handling
     if (sortBy) {
-      switch(sortBy) {
-        case "price_asc":
-          query = query.orderBy(asc(products.price));
-          break;
-        case "price_desc":
-          query = query.orderBy(desc(products.price));
-          break;
-        case "rating":
-          query = query.orderBy(desc(products.rating));
-          break;
+      const orderByClause = 
+        sortBy === "price_asc" ? asc(products.price) :
+        sortBy === "price_desc" ? desc(products.price) :
+        sortBy === "rating" ? desc(products.rating) :
+        undefined;
+      
+      if (orderByClause) {
+        query = query.orderBy(orderByClause);
       }
     }
     
@@ -853,8 +851,8 @@ export function registerRoutes(app: Express) {
           clinicPhone: veterinarians.clinicPhone,
           user: {
             id: users.id,
-            name: sql<string>`${users.name}::text`,
-            email: sql<string>`${users.email}::text`
+            name: users.name,
+            email: users.email
           }
         }
       })

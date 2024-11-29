@@ -164,6 +164,7 @@ export const vetAppointments = pgTable("vet_appointments", {
   type: text("type", { enum: ["checkup", "vaccination", "emergency", "grooming", "consultation"] }).notNull(),
   status: text("status", { enum: ["scheduled", "completed", "cancelled", "no_show"] }).default("scheduled").notNull(),
   notes: text("notes"),
+  questionnaire: jsonb("questionnaire").default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
