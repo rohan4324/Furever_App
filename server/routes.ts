@@ -532,14 +532,15 @@ export function registerRoutes(app: Express) {
     });
 
     const { category, sortBy, petType } = filterSchema.parse(req.query);
-    let query = db.select().from(products);
+    const baseQuery = db.select().from(products);
+    let query = baseQuery;
     
     if (category) {
-      query = query.where(eq(products.category, category));
+      query = baseQuery.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      query = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
     }
 
     // Apply sorting
