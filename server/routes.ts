@@ -193,23 +193,37 @@ export function registerRoutes(app: Express) {
 
   
   // Auth routes
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      const user = await db
-        .insert(users)
-        .values({
-          ...req.body,
-          password: hashedPassword,
-        })
-        .returning();
-      
-      req.session.userId = user[0].id;
-      res.json({ user: user[0] });
-    } catch (error) {
-      res.status(400).json({ error: "Registration failed" });
+  app.post("/api/auth/register", asyncHandler(async (req, res) => {
+    // Validate request body
+    const userSchema = z.object({
+      email: z.string().email(),
+      password: z.string().min(6),
+      name: z.string().min(2),
+      type: z.enum(["adopter_buyer", "shelter_ngo", "breeder", "expert_consultant"]),
+    });
+
+    const validatedData = userSchema.parse(req.body);
+    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+    
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, validatedData.email),
+    });
+
+    if (existingUser) {
+      throw new AppError(409, 'Conflict', 'Email already registered');
     }
-  });
+
+    const user = await db
+      .insert(users)
+      .values({
+        ...validatedData,
+        password: hashedPassword,
+      })
+      .returning();
+    
+    req.session.userId = user[0].id;
+    res.json({ user: user[0] });
+  }));
 
   // OAuth Routes
   app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
@@ -225,103 +239,109 @@ export function registerRoutes(app: Express) {
 
   
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const user = await db.query.users.findFirst({
-        where: eq(users.email, req.body.email),
-      });
+  app.post("/api/auth/login", asyncHandler(async (req, res) => {
+    const loginSchema = z.object({
+      email: z.string().email(),
+      password: z.string(),
+    });
 
-      if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+    const { email, password } = loginSchema.parse(req.body);
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
 
-      req.session.userId = user.id;
-      res.json({ user });
-    } catch (error) {
-      res.status(400).json({ error: "Login failed" });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new AppError(401, 'Unauthorized', 'Invalid credentials');
     }
-  });
+
+    req.session.userId = user.id;
+    res.json({ user });
+  }));
 
   // Pet routes
-  app.get("/api/pets", async (req, res) => {
-    try {
-      const filterSchema = z.object({
-        type: z.enum(["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"]).optional().nullable(),
-        breed: z.string().optional().nullable(),
-        size: z.enum(["small", "medium", "large"]).optional().nullable(),
-        gender: z.enum(["male", "female"]).optional().nullable(),
-        city: z.string().optional().nullable(),
-        ageYears: z.string().optional().nullable(),
-        ageMonths: z.string().optional().nullable(),
-      }).partial();
+  app.get("/api/pets", asyncHandler(async (req, res) => {
+    const filterSchema = z.object({
+      type: z.enum(["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"]).optional().nullable(),
+      breed: z.string().optional().nullable(),
+      size: z.enum(["small", "medium", "large"]).optional().nullable(),
+      gender: z.enum(["male", "female"]).optional().nullable(),
+      city: z.string().optional().nullable(),
+      ageYears: z.string().optional().nullable(),
+      ageMonths: z.string().optional().nullable(),
+    }).partial();
 
-      const filters = filterSchema.parse(req.query);
-      const conditions = [];
+    const filters = filterSchema.parse(req.query);
+    const conditions = [];
 
-      // Basic filters
-      if (filters.type != null) {
-        conditions.push(eq(pets.type, filters.type));
-      }
-      if (filters.breed != null) {
-        conditions.push(eq(pets.breed, filters.breed));
-      }
-      if (filters.city != null) {
-        conditions.push(eq(pets.city, filters.city));
-      }
-      if (filters.size != null) {
-        conditions.push(eq(pets.size, filters.size));
-      }
-      if (filters.gender != null) {
-        conditions.push(eq(pets.gender, filters.gender));
-      }
-
-      // Age filters using jsonb
-      if (filters.ageYears) {
-        const minYears = parseInt(filters.ageYears);
-        const maxYears = minYears === 6 ? 30 : minYears + 2;
-        
-        conditions.push(
-          and(
-            sql`CAST((${pets.age}->>'years')::text AS INTEGER) >= ${minYears}`,
-            sql`CAST((${pets.age}->>'years')::text AS INTEGER) < ${maxYears}`
-          )
-        );
-      }
-
-      if (filters.ageMonths) {
-        const monthRanges: Record<string, [number, number]> = {
-          "0": [0, 3],
-          "4": [4, 6],
-          "7": [7, 9],
-          "10": [10, 12]
-        };
-        
-        const [minMonths, maxMonths] = monthRanges[filters.ageMonths];
-        conditions.push(
-          and(
-            sql`CAST((${pets.age}->>'months')::text AS INTEGER) >= ${minMonths}`,
-            sql`CAST((${pets.age}->>'months')::text AS INTEGER) < ${maxMonths}`
-          )
-        );
-      }
-
-      // Build and execute query
-      const query = db.select().from(pets);
-      if (conditions.length > 0) {
-        query.where(and(...conditions));
-      }
-
-      const results = await query;
-      res.json(results);
-    } catch (error) {
-      console.error('Error in /api/pets:', error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid query parameters" });
-      } else {
-        res.status(500).json({ error: "Internal server error" });
-      }
+    // Basic filters
+    if (filters.type != null) {
+      conditions.push(eq(pets.type, filters.type));
     }
-  });
+    if (filters.breed != null) {
+      conditions.push(eq(pets.breed, filters.breed));
+    }
+    if (filters.city != null) {
+      conditions.push(eq(pets.city, filters.city));
+    }
+    if (filters.size != null) {
+      conditions.push(eq(pets.size, filters.size));
+    }
+    if (filters.gender != null) {
+      conditions.push(eq(pets.gender, filters.gender));
+    }
+
+    // Age filters using jsonb
+    if (filters.ageYears) {
+      const minYears = parseInt(filters.ageYears);
+      if (isNaN(minYears)) {
+        throw new AppError(400, 'ValidationError', 'Invalid age years format');
+      }
+      const maxYears = minYears === 6 ? 30 : minYears + 2;
+      
+      conditions.push(
+        and(
+          sql`CAST((${pets.age}->>'years')::text AS INTEGER) >= ${minYears}`,
+          sql`CAST((${pets.age}->>'years')::text AS INTEGER) < ${maxYears}`
+        )
+      );
+    }
+
+    if (filters.ageMonths) {
+      const monthRanges: Record<string, [number, number]> = {
+        "0": [0, 3],
+        "4": [4, 6],
+        "7": [7, 9],
+        "10": [10, 12]
+      };
+      
+      if (!monthRanges[filters.ageMonths]) {
+        throw new AppError(400, 'ValidationError', 'Invalid age months range');
+      }
+      
+      const [minMonths, maxMonths] = monthRanges[filters.ageMonths];
+      conditions.push(
+        and(
+          sql`CAST((${pets.age}->>'months')::text AS INTEGER) >= ${minMonths}`,
+          sql`CAST((${pets.age}->>'months')::text AS INTEGER) < ${maxMonths}`
+        )
+      );
+    }
+
+    // Build and execute query
+    const query = db.select().from(pets);
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
+
+    const results = await query;
+    
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No pets found matching the criteria');
+    }
+    
+    res.json(results);
+  }));
 
   app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: any }, res) => {
     if (!req.session.userId) {
