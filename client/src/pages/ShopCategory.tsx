@@ -159,29 +159,32 @@ export default function ShopCategory() {
                   }}
                 />
               </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-1">{product.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {product.brand}
-                </p>
-                <div className="flex justify-between items-center gap-1">
-                  <span className="font-medium">${product.price}</span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="px-2 py-1 text-xs"
-                      onClick={() => addToCartMutation.mutate(product.id)}
-                    >
-                      Add to Cart
-                    </Button>
-                    <Button
-                      size="xs"
-                      className="px-2 py-1 text-xs"
-                      onClick={() => window.location.assign('/checkout')}
-                    >
-                      Buy Now
-                    </Button>
+              <CardContent className="p-4 flex flex-col h-full">
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1 line-clamp-2">{product.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {product.brand}
+                  </p>
+                </div>
+                <div className="mt-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-semibold">${product.price}</span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addToCartMutation.mutate(product.id)}
+                      >
+                        Add to Cart
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => window.location.assign('/checkout')}
+                      >
+                        Buy Now
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
