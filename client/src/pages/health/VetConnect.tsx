@@ -470,18 +470,101 @@ export default function VetConnectPage() {
         </TabsContent>
 
         <TabsContent value="emergency">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>24/7 Emergency Veterinary Services</AlertTitle>
-            <AlertDescription>
-              For immediate emergency assistance, please contact our 24/7 emergency hotline:
-              <br />
-              <Button variant="link" className="mt-2">
-                <Phone className="w-4 h-4 mr-2" />
-                1-800-PET-EMRG
-              </Button>
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-6">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Emergency Veterinary Services - Available 24/7</AlertTitle>
+              <AlertDescription>
+                If your pet requires immediate medical attention, please contact our emergency services immediately.
+              </AlertDescription>
+            </Alert>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="h-5 w-5" />
+                    Emergency Hotline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Our emergency hotline is available 24/7 for immediate assistance
+                    </p>
+                    <Button className="w-full" size="lg" onClick={() => window.location.href = 'tel:1-800-PET-EMRG'}>
+                      <Phone className="w-4 h-4 mr-2" />
+                      Call 1-800-PET-EMRG
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Emergency Locations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { name: "Central Pet ER", address: "123 Emergency Ave", phone: "555-0123" },
+                      { name: "24/7 Pet Care", address: "456 Urgent St", phone: "555-0124" }
+                    ].map((location) => (
+                      <div key={location.name} className="p-4 border rounded-lg">
+                        <h4 className="font-semibold">{location.name}</h4>
+                        <p className="text-sm text-muted-foreground">{location.address}</p>
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto mt-1"
+                          onClick={() => window.location.href = `tel:${location.phone}`}
+                        >
+                          {location.phone}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Emergency Guidelines
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold">When to Seek Emergency Care</h4>
+                        <ul className="mt-2 space-y-2 text-sm">
+                          <li>• Difficulty breathing</li>
+                          <li>• Severe bleeding or trauma</li>
+                          <li>• Suspected poisoning</li>
+                          <li>• Severe vomiting or diarrhea</li>
+                          <li>• Collapse or seizures</li>
+                        </ul>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold">What to Do While Waiting</h4>
+                        <ul className="mt-2 space-y-2 text-sm">
+                          <li>• Keep your pet warm and comfortable</li>
+                          <li>• Minimize movement if injury is suspected</li>
+                          <li>• Have medical records ready</li>
+                          <li>• Follow emergency vet instructions</li>
+                          <li>• Stay calm and reassure your pet</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
