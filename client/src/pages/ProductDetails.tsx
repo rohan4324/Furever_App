@@ -16,8 +16,8 @@ import {
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
-  const [params] = useParams();
-  const productId = params?.id;  // Access id from params object
+  const [, params] = useParams();
+  const productId = params?.id;
   const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({

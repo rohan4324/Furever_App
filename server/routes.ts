@@ -364,33 +364,48 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", async (req, res) => {
     try {
       const { category, sortBy, petType } = req.query;
-      let query = db.select().from(products);
+      let query;
       
       if (category) {
-        query = query.where(eq(products.category, category as string));
+        query = db.select()
+          .from(products)
+          .where(eq(products.category, category as string));
+      } else {
+        query = db.select().from(products);
       }
       
       if (petType && petType !== "all") {
-        query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+        query = db.select()
+          .from(products)
+          .where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
       }
 
       // Apply sorting
-      if (sortBy === "price_asc") {
-        query = query.orderBy(asc(products.price));
-      } else if (sortBy === "price_desc") {
-        query = query.orderBy(desc(products.price));
-      } else if (sortBy === "rating") {
-        query = query.orderBy(desc(products.rating));
+      switch(sortBy) {
+        case "price_asc":
+          query = db.select()
+            .from(products)
+            .orderBy(asc(products.price));
+          break;
+        case "price_desc":
+          query = db.select()
+            .from(products)
+            .orderBy(desc(products.price));
+          break;
+        case "rating":
+          query = db.select()
+            .from(products)
+            .orderBy(desc(products.rating));
+          break;
+        default:
+          query = db.select().from(products);
       }
       
       const results = await query;
       res.json(results);
     } catch (error) {
       console.error('Error in /api/products:', error);
-      res.status(500).json({ 
-        error: "Failed to fetch products",
-        details: error instanceof Error ? error.message : String(error)
-      });
+      res.status(500).json({ error: "Failed to fetch products" });
     }
   });
 
