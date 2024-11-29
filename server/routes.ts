@@ -715,6 +715,27 @@ app.post("/api/appointments", async (req, res) => {
     }
   });
 
+  // QR Code Generation endpoint
+  app.post("/api/generate-qr", async (req, res) => {
+    try {
+      const { recordId, animalType, recordType, date, description } = req.body;
+      
+      // Create a unique shareable link
+      const shareableLink = `${process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` 
+        : 'http://localhost:5000'}/shared-record/${recordId}`;
+
+      // Generate QR code
+      const QRCode = require('qrcode');
+      const qrUrl = await QRCode.toDataURL(shareableLink);
+
+      res.json({ qrUrl, shareableLink });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      res.status(500).json({ error: "Failed to generate QR code" });
+    }
+  });
+
   app.get("/api/health-records/:petId", async (req, res) => {
     try {
       const results = await db

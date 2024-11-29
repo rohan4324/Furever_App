@@ -29,7 +29,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoCall } from "@/components/video/VideoCall";
-import type { Pet } from "@db/schema";
 
 interface TimeSlots {
   [key: string]: string[];
@@ -53,7 +52,7 @@ interface VetWithUser {
 
 interface AppointmentData {
   veterinarianId: number;
-  petId: number;
+  petId: number; //This remains for backward compatibility, though not used in the updated code.
   dateTime: string;
   type: "consultation" | "checkup" | "emergency";
   status: "scheduled";
@@ -66,13 +65,25 @@ export default function VetConnectPage() {
   const [specialization, setSpecialization] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
-  const [selectedPetId, setSelectedPetId] = useState<string>("");
+  const [selectedAnimalType, setSelectedAnimalType] = useState<string>("");
   const [selectedVet, setSelectedVet] = useState<VetWithUser | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const [activeAppointmentId, setActiveAppointmentId] = useState<string>("");
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [appointmentType, setAppointmentType] = useState<"consultation" | "checkup" | "emergency">("consultation");
+
+  // Define animal types
+  const animalTypes = [
+    { id: 1, type: "Dog" },
+    { id: 2, type: "Cat" },
+    { id: 3, type: "Bird" },
+    { id: 4, type: "Fish" },
+    { id: 5, type: "Hamster" },
+    { id: 6, type: "Rabbit" },
+    { id: 7, type: "Guinea Pig" },
+    { id: 8, type: "Other" }
+  ];
 
   // Fetch veterinarians
   const { data: veterinarians, isLoading, error } = useQuery<VetWithUser[]>({
@@ -82,19 +93,6 @@ export default function VetConnectPage() {
       if (!res.ok) {
         const error = await res.text();
         throw new Error(error || "Failed to fetch veterinarians");
-      }
-      return res.json();
-    },
-  });
-
-  // Fetch pets
-  const { data: pets, isLoading: isPetsLoading } = useQuery<Pet[]>({
-    queryKey: ["pets"],
-    queryFn: async () => {
-      const res = await fetch("/api/pets");
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error || "Failed to fetch pets");
       }
       return res.json();
     },
@@ -124,7 +122,7 @@ export default function VetConnectPage() {
       setIsBookingDialogOpen(false);
       setSelectedDate(undefined);
       setSelectedTimeSlot("");
-      setSelectedPetId("");
+      setSelectedAnimalType("");
       setSelectedVet(null);
     },
     onError: (error) => {
@@ -147,7 +145,7 @@ export default function VetConnectPage() {
   });
 
   const handleBookAppointment = async () => {
-    if (!selectedDate || !selectedTimeSlot || !selectedPetId || !selectedVet) {
+    if (!selectedDate || !selectedTimeSlot || !selectedAnimalType || !selectedVet) {
       toast({
         title: "Error",
         description: "Please select all required fields",
@@ -163,7 +161,7 @@ export default function VetConnectPage() {
 
       bookAppointmentMutation.mutate({
         veterinarianId: selectedVet.id,
-        petId: parseInt(selectedPetId),
+        petId: 0, // Placeholder,  petId is no longer used in the logic.
         dateTime: appointmentDateTime.toISOString(),
         type: appointmentType,
         status: "scheduled",
@@ -326,25 +324,22 @@ export default function VetConnectPage() {
                             </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-6 py-4">
-                            {/* Pet Selection */}
+                            {/* Pet Type Selection */}
                             <div className="space-y-2">
-                              <Label>Select Pet</Label>
-                              <Select value={selectedPetId} onValueChange={setSelectedPetId}>
+                              <Label>Select Animal Type</Label>
+                              <Select 
+                                value={selectedAnimalType} 
+                                onValueChange={setSelectedAnimalType}
+                              >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Choose a pet" />
+                                  <SelectValue placeholder="Choose animal type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {isPetsLoading ? (
-                                    <SelectItem value="" disabled>Loading pets...</SelectItem>
-                                  ) : !pets?.length ? (
-                                    <SelectItem value="" disabled>No pets found</SelectItem>
-                                  ) : (
-                                    pets.map((pet) => (
-                                      <SelectItem key={pet.id} value={pet.id.toString()}>
-                                        {pet.name}
-                                      </SelectItem>
-                                    ))
-                                  )}
+                                  {animalTypes.map((animal) => (
+                                    <SelectItem key={animal.id} value={animal.type}>
+                                      {animal.type}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -446,7 +441,7 @@ export default function VetConnectPage() {
                                 bookAppointmentMutation.isPending ||
                                 !selectedDate ||
                                 !selectedTimeSlot ||
-                                !selectedPetId
+                                !selectedAnimalType
                               }
                             >
                               {bookAppointmentMutation.isPending ? (
