@@ -532,27 +532,29 @@ export function registerRoutes(app: Express) {
     });
 
     const { category, sortBy, petType } = filterSchema.parse(req.query);
-    let query = db.select().from(products);
+    const baseQuery = db.select().from(products);
+    
+    let query = baseQuery;
     
     if (category) {
-      query = query.where(eq(products.category, category));
+      query = baseQuery.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      query = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
     }
 
     // Apply sorting
     if (sortBy) {
       switch(sortBy) {
         case "price_asc":
-          query = query.orderBy(asc(products.price));
+          query = baseQuery.orderBy(asc(products.price));
           break;
         case "price_desc":
-          query = query.orderBy(desc(products.price));
+          query = baseQuery.orderBy(desc(products.price));
           break;
         case "rating":
-          query = query.orderBy(desc(products.rating));
+          query = baseQuery.orderBy(desc(products.rating));
           break;
       }
     }
@@ -844,12 +846,12 @@ export function registerRoutes(app: Express) {
         notes: vetAppointments.notes,
         veterinarian: {
           id: veterinarians.id,
-          clinicAddress: sql<string>`${veterinarians.clinicAddress}::text`,
-          clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
+          clinicAddress: veterinarians.clinicAddress,
+          clinicPhone: veterinarians.clinicPhone,
           user: {
             id: users.id,
-            name: sql<string>`${users.name}::text`,
-            email: sql<string>`${users.email}::text`
+            name: users.name,
+            email: users.email
           }
         }
       })
