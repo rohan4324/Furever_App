@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -13,6 +13,7 @@ import { Product } from "@db/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ShoppingCart } from "lucide-react";
 
 export default function ShopCategory() {
   const [location] = useLocation();
@@ -85,6 +86,14 @@ export default function ShopCategory() {
 
   return (
     <div className="space-y-8">
+      {/* Add cart icon and count at the top */}
+      <div className="flex justify-end items-center gap-2">
+        <Link to="/cart" className="flex items-center gap-2 hover:text-primary">
+          <ShoppingCart className="h-5 w-5" />
+          {/* Add cart count here if available */}
+        </Link>
+      </div>
+
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4 capitalize">
           {category.replace("_", " ")}
@@ -155,18 +164,20 @@ export default function ShopCategory() {
                 <p className="text-sm text-muted-foreground mb-2">
                   {product.brand}
                 </p>
-                <div className="flex justify-between items-center gap-2">
+                <div className="flex justify-between items-center gap-1">
                   <span className="font-medium">${product.price}</span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="xs"
+                      className="px-2 py-1 text-xs"
                       onClick={() => addToCartMutation.mutate(product.id)}
                     >
                       Add to Cart
                     </Button>
                     <Button
-                      size="sm"
+                      size="xs"
+                      className="px-2 py-1 text-xs"
                       onClick={() => window.location.assign('/checkout')}
                     >
                       Buy Now
