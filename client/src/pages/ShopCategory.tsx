@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Product } from "@db/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -10,11 +16,17 @@ import { useState } from "react";
 export default function ShopCategory() {
   const [location] = useLocation();
   const category = location.split("/")[2] || "food";
-  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">("rating");
+  const [sortBy, setSortBy] = useState<"price_asc" | "price_desc" | "rating">(
+    "rating",
+  );
   const [petType, setPetType] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: products, isLoading } = useQuery({
+  const {
+    data: products,
+    isLoading,
+    error: fetchError,
+  } = useQuery({
     queryKey: ["products", category, sortBy, petType],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -29,15 +41,12 @@ export default function ShopCategory() {
       }
       return res.json() as Promise<Product[]>;
     },
-    onError: (error) => {
-      setError(error instanceof Error ? error.message : "Failed to fetch products");
-    },
   });
 
-  if (error) {
+  if (fetchError) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-500">Error: {error}</p>
+        <p className="text-red-500">Error: {fetchError.message}</p>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Try Again
         </Button>
@@ -74,7 +83,10 @@ export default function ShopCategory() {
             </SelectContent>
           </Select>
 
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <Select
+            value={sortBy}
+            onValueChange={(value: any) => setSortBy(value)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -99,29 +111,21 @@ export default function ShopCategory() {
             <Card key={product.id} className="overflow-hidden group">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src={product.images[0].startsWith('http') 
-                    ? product.images[0]  // Use direct URL if it starts with http
-                    : product.images[0].startsWith('/') 
-                      ? product.images[0]  // Use as is if starts with /
-                      : `/images/products/${product.images[0]}`  // Otherwise prepend path
-                  }
+                  src={`https://placehold.co/600x400?text=${encodeURIComponent(product.name)}`}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = '/images/products/placeholder.jpg';
-                    target.onerror = null; // Prevent infinite loop if placeholder also fails
-                  }}
                 />
               </div>
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-1">{product.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{product.brand}</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {product.brand}
+                </p>
                 <div className="flex justify-between items-center">
                   <span className="font-medium">${product.price}</span>
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/shop/product/${product.id}`)}
+                    onClick={() => window.location.assign(`/shop/product/${product.id}`)}
                   >
                     View Details
                   </Button>

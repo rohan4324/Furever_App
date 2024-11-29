@@ -373,33 +373,17 @@ export function registerRoutes(app: Express) {
       if (petType && petType !== "all") {
         query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
       }
-      
-      let baseQuery = db.select().from(products);
-      if (category) {
-        baseQuery = baseQuery.where(eq(products.category, category as string));
-      }
-      
-      if (petType && petType !== "all") {
-        baseQuery = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
-      }
 
-      switch(sortBy) {
-        case "price_asc":
-          query = baseQuery.orderBy(asc(products.price));
-          break;
-        case "price_desc":
-          query = baseQuery.orderBy(desc(products.price));
-          break;
-        case "rating":
-          query = baseQuery.orderBy(desc(products.rating));
-          break;
-        default:
-          query = baseQuery;
+      // Apply sorting
+      if (sortBy === "price_asc") {
+        query = query.orderBy(asc(products.price));
+      } else if (sortBy === "price_desc") {
+        query = query.orderBy(desc(products.price));
+      } else if (sortBy === "rating") {
+        query = query.orderBy(desc(products.rating));
       }
       
-      console.log('Products query:', query.toSQL());
       const results = await query;
-      console.log('Products query result:', results);
       res.json(results);
     } catch (error) {
       console.error('Error in /api/products:', error);

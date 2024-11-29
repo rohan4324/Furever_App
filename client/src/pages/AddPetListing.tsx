@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPetSchema, type InsertPet } from "@db/schema";
+import { insertPetSchema } from "@db/schema"; // Ensure this imports the correct schema
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,28 +17,46 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+type SimplifiedInsertPet = {
+  name: string;
+  type: string;
+  breed: string;
+  ageYears: number;
+  ageMonths: number;
+  gender: string;
+  size: string;
+  description: string;
+  images: string[];
+  status: string;
+  city: string; // Ensure 'city' property is included
+};
+
 export default function AddPetListing() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [images, setImages] = useState<FileList | null>(null);
+  const [images, setImages] = useState<FileList | undefined>(undefined); // Changed to `undefined`
 
-  const form = useForm<InsertPet>({
+  const form = useForm<SimplifiedInsertPet>({
     resolver: zodResolver(insertPetSchema),
     defaultValues: {
       name: "",
       type: "dog",
       breed: "",
-      age: { years: 0, months: 0 },
+      ageYears: 0,
+      ageMonths: 0,
       gender: "male",
       size: "medium",
       description: "",
       images: [],
       status: "available",
+      city: "", // Default value for city
     },
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: InsertPet & { imageFiles?: FileList }) => {
+    mutationFn: async (
+      data: SimplifiedInsertPet & { imageFiles?: FileList },
+    ) => {
       const formData = new FormData();
       if (data.imageFiles && data.imageFiles instanceof FileList) {
         for (let i = 0; i < data.imageFiles.length; i++) {
@@ -48,7 +66,6 @@ export default function AddPetListing() {
           }
         }
       }
-      // Remove imageFiles from data before stringifying
       const { imageFiles, ...petData } = data;
       formData.append("data", JSON.stringify(petData));
 
@@ -56,7 +73,7 @@ export default function AddPetListing() {
         method: "POST",
         body: formData,
       });
-      
+
       if (!res.ok) throw new Error("Failed to create pet listing");
       return res.json();
     },
@@ -76,7 +93,7 @@ export default function AddPetListing() {
     },
   });
 
-  const handleSubmit = (data: InsertPet) => {
+  const handleSubmit = (data: SimplifiedInsertPet) => {
     mutation.mutate({ ...data, imageFiles: images });
   };
 
@@ -146,7 +163,7 @@ export default function AddPetListing() {
               <Input
                 type="number"
                 min="0"
-                {...form.register("age.years", { valueAsNumber: true })}
+                {...form.register("ageYears", { valueAsNumber: true })}
               />
             </div>
             <div>
@@ -155,7 +172,7 @@ export default function AddPetListing() {
                 type="number"
                 min="0"
                 max="11"
-                {...form.register("age.months", { valueAsNumber: true })}
+                {...form.register("ageMonths", { valueAsNumber: true })}
               />
             </div>
           </div>
@@ -206,7 +223,9 @@ export default function AddPetListing() {
               type="file"
               multiple
               accept="image/*"
-              onChange={(e) => setImages(e.target.files)}
+              onChange={(e) =>
+                setImages(e.target.files ? e.target.files : undefined)
+              }
               className="mt-1"
             />
           </div>
