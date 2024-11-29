@@ -20,10 +20,42 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { Star, Phone, MapPin, Award, Clock, AlertCircle, Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Star, Phone, MapPin, Award, Clock, AlertCircle, Loader2, Search, Filter } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import type { Pet } from "@db/schema";
+
+interface TimeSlots {
+  [key: string]: string[];
+}
+
+interface VetWithUser {
+  id: number;
+  userId: number;
+  specializations: string[];
+  qualifications: string[];
+  clinicAddress: string;
+  clinicPhone: string;
+  availableSlots: TimeSlots;
+  rating: number | null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+interface AppointmentData {
+  veterinarianId: number;
+  petId: number;
+  dateTime: string;
+  type: "consultation";
+  status: "scheduled";
+  notes: string;
+}
 
 export default function VetDirectoryPage() {
   const { toast } = useToast();
@@ -32,10 +64,11 @@ export default function VetDirectoryPage() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
   const [selectedPetId, setSelectedPetId] = useState<string>("");
-  const [selectedVet, setSelectedVet] = useState<any>(null);
+  const [selectedVet, setSelectedVet] = useState<VetWithUser | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
 
-  const { data: veterinarians, isLoading, error } = useQuery({
+  // Fetch veterinarians
+  const { data: veterinarians, isLoading, error } = useQuery<VetWithUser[]>({
     queryKey: ["veterinarians"],
     queryFn: async () => {
       const res = await fetch("/api/veterinarians");
@@ -47,7 +80,8 @@ export default function VetDirectoryPage() {
     },
   });
 
-  const { data: pets, isLoading: isPetsLoading } = useQuery({
+  // Fetch pets
+  const { data: pets, isLoading: isPetsLoading } = useQuery<Pet[]>({
     queryKey: ["pets"],
     queryFn: async () => {
       const res = await fetch("/api/pets");
@@ -59,8 +93,9 @@ export default function VetDirectoryPage() {
     },
   });
 
+  // Book appointment mutation
   const bookAppointmentMutation = useMutation({
-    mutationFn: async (appointmentData: any) => {
+    mutationFn: async (appointmentData: AppointmentData) => {
       const res = await fetch("/api/appointments", {
         method: "POST",
         headers: {
@@ -94,11 +129,24 @@ export default function VetDirectoryPage() {
     },
   });
 
-  const filteredVets = veterinarians?.filter((vet: any) => {
-    const matchesSearch = vet.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredVets = veterinarians?.filter((vet) => {
+    const matchesSearch = 
+      vet.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vet.clinicAddress.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialization = !specialization || specialization === "all" || vet.specializations.includes(specialization);
-    return matchesSearch && matchesSpecialization;
+    const matchesSpecialization = 
+      !specialization || 
+      specialization === "all" || 
+      vet.specializations.includes(specialization);
+    
+    // Check availability if date and time are selected
+    let isAvailable = true;
+    if (selectedDate && selectedTimeSlot) {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const availableSlots = vet.availableSlots[dateStr] || [];
+      isAvailable = availableSlots.includes(selectedTimeSlot);
+    }
+    
+    return matchesSearch && matchesSpecialization && isAvailable;
   });
 
   const handleBookAppointment = async () => {
@@ -111,67 +159,152 @@ export default function VetDirectoryPage() {
       return;
     }
 
-    const appointmentDateTime = new Date(selectedDate);
-    const [hours, minutes] = selectedTimeSlot.split(":");
-    appointmentDateTime.setHours(parseInt(hours), parseInt(minutes));
+    // Validate selected time slot is still available
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const availableSlots = selectedVet.availableSlots[dateStr] || [];
+    if (!availableSlots.includes(selectedTimeSlot)) {
+      toast({
+        title: "Error",
+        description: "Selected time slot is no longer available. Please choose another time.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    bookAppointmentMutation.mutate({
-      veterinarianId: selectedVet.id,
-      petId: parseInt(selectedPetId),
-      dateTime: appointmentDateTime.toISOString(),
-      type: "consultation",
-      status: "scheduled",
-      notes: `Appointment with ${selectedVet.user.name}`,
-    });
+    try {
+      const appointmentDateTime = new Date(selectedDate);
+      const [hours, minutes] = selectedTimeSlot.split(":");
+      appointmentDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+      // Check for existing appointments at the same time
+      const existingAppointments = await fetch(
+        `/api/appointments?date=${appointmentDateTime.toISOString()}&veterinarianId=${selectedVet.id}`
+      ).then((res) => res.json());
+
+      if (existingAppointments?.length > 0) {
+        toast({
+          title: "Error",
+          description: "This time slot has just been booked. Please select another time.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      bookAppointmentMutation.mutate({
+        veterinarianId: selectedVet.id,
+        petId: parseInt(selectedPetId),
+        dateTime: appointmentDateTime.toISOString(),
+        type: "consultation",
+        status: "scheduled",
+        notes: `Appointment with ${selectedVet.user.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to book appointment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const getAvailableTimeSlots = (date: Date, vet: any) => {
+  const getAvailableTimeSlots = (date: Date, vet: VetWithUser): string[] => {
     const dateStr = format(date, "yyyy-MM-dd");
     return vet.availableSlots[dateStr] || [];
   };
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error instanceof Error ? error.message : "Failed to load veterinarians"}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert variant="destructive" className="m-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          {error instanceof Error ? error.message : "Failed to load veterinarians"}
+        </AlertDescription>
+      </Alert>
     );
   }
+
+  const renderSkeletonCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Card key={i} className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-8">Find a Veterinarian</h1>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <Input
-          placeholder="Search by name or location..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="md:w-1/2"
-        />
-        <Select value={specialization} onValueChange={setSpecialization}>
-          <SelectTrigger className="md:w-1/3">
-            <SelectValue placeholder="Filter by specialization" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Specializations</SelectItem>
-            <SelectItem value="general">General Practice</SelectItem>
-            <SelectItem value="surgery">Surgery</SelectItem>
-            <SelectItem value="dermatology">Dermatology</SelectItem>
-            <SelectItem value="dentistry">Dentistry</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative md:w-1/3">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="relative md:w-1/3">
+          <Filter className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Select value={specialization} onValueChange={setSpecialization}>
+            <SelectTrigger className="pl-9">
+              <SelectValue placeholder="Filter by specialization" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Specializations</SelectItem>
+              <SelectItem value="general">General Practice</SelectItem>
+              <SelectItem value="surgery">Surgery</SelectItem>
+              <SelectItem value="dermatology">Dermatology</SelectItem>
+              <SelectItem value="dentistry">Dentistry</SelectItem>
+              <SelectItem value="emergency">Emergency Care</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="relative md:w-1/3">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-lg border"
+            disabled={(date) => date < new Date()}
+          />
+        </div>
       </div>
+      
+      {selectedDate && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Available Time Slots</h3>
+          <div className="flex flex-wrap gap-2">
+            {["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"].map((time) => (
+              <Button
+                key={time}
+                variant={selectedTimeSlot === time ? "default" : "outline"}
+                onClick={() => setSelectedTimeSlot(time)}
+                className="w-24"
+              >
+                {time}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
+        renderSkeletonCards()
       ) : !veterinarians || veterinarians.length === 0 ? (
         <Alert>
           <AlertCircle className="h-4 w-4" />
@@ -181,7 +314,7 @@ export default function VetDirectoryPage() {
         </Alert>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVets?.map((vet: any) => (
+          {filteredVets?.map((vet) => (
             <Card key={vet.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -210,13 +343,16 @@ export default function VetDirectoryPage() {
                     <Phone className="w-4 h-4" />
                     <span>{vet.clinicPhone}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Award className="w-4 h-4" />
-                    <span>Specializations: {vet.specializations.join(", ")}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {vet.specializations.map((spec) => (
+                      <Badge key={spec} variant="secondary">
+                        {spec}
+                      </Badge>
+                    ))}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4" />
-                    <span>Qualifications: {vet.qualifications.join(", ")}</span>
+                    <Award className="w-4 h-4" />
+                    <span className="text-xs">{vet.qualifications.join(", ")}</span>
                   </div>
                   
                   <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
@@ -252,7 +388,7 @@ export default function VetDirectoryPage() {
                               ) : !pets?.length ? (
                                 <SelectItem value="" disabled>No pets found</SelectItem>
                               ) : (
-                                pets.map((pet: any) => (
+                                pets.map((pet) => (
                                   <SelectItem key={pet.id} value={pet.id.toString()}>
                                     {pet.name}
                                   </SelectItem>
@@ -274,14 +410,16 @@ export default function VetDirectoryPage() {
                             }}
                             className="rounded-md border"
                             disabled={(date) => {
-                              const slots = vet.availableSlots[format(date, "yyyy-MM-dd")];
+                              if (!selectedVet) return true;
+                              const dateStr = format(date, "yyyy-MM-dd");
+                              const slots = selectedVet.availableSlots[dateStr];
                               return !slots || slots.length === 0;
                             }}
                           />
                         </div>
 
                         {/* Time Slot Selection */}
-                        {selectedDate && (
+                        {selectedDate && selectedVet && (
                           <div className="space-y-2">
                             <Label>Select Time</Label>
                             <RadioGroup
@@ -289,7 +427,7 @@ export default function VetDirectoryPage() {
                               onValueChange={setSelectedTimeSlot}
                               className="grid grid-cols-3 gap-2"
                             >
-                              {getAvailableTimeSlots(selectedDate, vet).map((slot: string) => (
+                              {getAvailableTimeSlots(selectedDate, selectedVet).map((slot) => (
                                 <div key={slot} className="flex items-center space-x-2">
                                   <RadioGroupItem value={slot} id={slot} />
                                   <Label htmlFor={slot}>{slot}</Label>
