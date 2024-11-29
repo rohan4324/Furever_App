@@ -659,11 +659,7 @@ export function registerRoutes(app: Express) {
             id: veterinarians.id,
             clinicAddress: veterinarians.clinicAddress,
             clinicPhone: veterinarians.clinicPhone,
-            user: {
-              id: Number(users.id),
-              name: String(users.name),
-              email: String(users.email)
-            }
+            user: users
           }
         })
         .from(vetAppointments)
