@@ -1,4 +1,4 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { users, pets, shelters, breeders, messages, adoptionApplications, products, cartItems } from "@db/schema";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
@@ -496,6 +496,12 @@ export function registerRoutes(app: Express) {
           .where(eq(cartItems.id, existingItem[0].id))
           .returning();
         return res.json(updated[0]);
+      }
+
+      // Parse and validate price
+      const price = parseFloat(req.body.price);
+      if (isNaN(price)) {
+        throw new Error("Invalid price format");
       }
 
       // Add new item if it doesn't exist
