@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// Video consultation feature coming soon
+import { VideoCall } from "@/components/video/VideoCall";
 import type { Pet } from "@db/schema";
 
 interface TimeSlots {
@@ -402,17 +402,40 @@ export default function VetConnectPage() {
 
                             {/* Video Consultation Option */}
                             {appointmentType === "consultation" && (
-                              <div className="space-y-4 p-4 bg-muted rounded-lg">
-                                <div className="flex items-center gap-2">
-                                  <Video className="w-4 h-4" />
-                                  <span className="text-sm font-medium">Video Consultations</span>
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Video className="w-4 h-4" />
+                                    <span className="text-sm">Video consultation available</span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowVideoCall(true)}
+                                  >
+                                    Start Video Call
+                                  </Button>
                                 </div>
-                                <Alert>
-                                  <AlertTitle>Coming Soon!</AlertTitle>
-                                  <AlertDescription>
-                                    Video consultation feature is currently under development. You will soon be able to connect with veterinarians remotely.
-                                  </AlertDescription>
-                                </Alert>
+
+                                {showVideoCall && (
+                                  <Dialog open={showVideoCall} onOpenChange={setShowVideoCall}>
+                                    <DialogContent className="max-w-4xl">
+                                      <DialogHeader>
+                                        <DialogTitle>Video Consultation</DialogTitle>
+                                        <DialogDescription>
+                                          Your video consultation with Dr. {selectedVet?.user.name}
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="aspect-video">
+                                        <VideoCall
+                                          appointmentId={`temp-${Date.now()}`}
+                                          isInitiator={true}
+                                          onEnd={() => setShowVideoCall(false)}
+                                        />
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                )}
                               </div>
                             )}
 
