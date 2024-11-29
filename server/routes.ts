@@ -661,8 +661,8 @@ export function registerRoutes(app: Express) {
             clinicPhone: veterinarians.clinicPhone,
             user: {
               id: users.id,
-              name: users.name,
-              email: users.email
+              name: sql<string>`${users.name}`,
+              email: sql<string>`${users.email}`
             }
           }
         })
