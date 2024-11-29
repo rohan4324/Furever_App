@@ -159,7 +159,11 @@ export default function MedicalHistoryPage() {
 
   const handleShare = async (record: any) => {
     try {
-      // Create a QR code for the record
+      // Get detailed pet information
+      const petResponse = await fetch(`/api/pets/${record.petId}`);
+      const petDetails = await petResponse.json();
+
+      // Create a QR code for the record with enhanced information
       const qrCode = await fetch("/api/generate-qr", {
         method: "POST",
         headers: {
@@ -167,10 +171,17 @@ export default function MedicalHistoryPage() {
         },
         body: JSON.stringify({
           recordId: record.id,
-          animalType: selectedAnimalType,
+          petDetails: {
+            name: petDetails.name,
+            breed: petDetails.breed,
+            age: petDetails.age,
+            type: petDetails.type,
+          },
           recordType: record.type,
           date: record.date,
           description: record.description,
+          severity: record.severity,
+          veterinarianId: record.veterinarianId,
         }),
       });
 
@@ -180,26 +191,58 @@ export default function MedicalHistoryPage() {
 
       const { qrUrl, shareableLink } = await qrCode.json();
 
-      // Create a formatted medical record for sharing
+      // Create a formatted medical record for sharing with enhanced information
       const recordText = `
 Pet Medical Record
-Type: ${record.type}
-Animal: ${selectedAnimalType}
+Pet Name: ${petDetails.name}
+Type: ${petDetails.type}
+Breed: ${petDetails.breed}
+Age: ${petDetails.age.years} years ${petDetails.age.months} months
+Record Type: ${record.type}
 Date: ${new Date(record.date).toLocaleDateString()}
 Description: ${record.description}
+Severity: ${record.severity || 'Not specified'}
 Shareable Link: ${shareableLink}
+
+Note: This medical record is shared securely. The link will expire in 24 hours.
       `.trim();
 
+      // Add to clipboard
       await navigator.clipboard.writeText(recordText);
-      
+
+      // Show success message with sharing options
       toast({
-        title: "Success",
-        description: "Medical record copied to clipboard. QR code generated for easy sharing.",
+        title: "Record Shared Successfully",
+        description: (
+          <div className="space-y-2">
+            <p>Medical record copied to clipboard</p>
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.open(shareableLink, '_blank')}
+              >
+                Open Link
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const mailtoLink = `mailto:?subject=Pet Medical Record - ${petDetails.name}&body=${encodeURIComponent(recordText)}`;
+                  window.location.href = mailtoLink;
+                }}
+              >
+                Share via Email
+              </Button>
+            </div>
+          </div>
+        ),
+        duration: 5000,
       });
     } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to share medical record",
+        description: "Failed to share medical record. Please try again.",
         variant: "destructive",
       });
     }

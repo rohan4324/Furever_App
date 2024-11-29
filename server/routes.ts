@@ -737,6 +737,33 @@ app.post("/api/appointments", async (req, res) => {
   });
 
   app.get("/api/health-records/:petId", async (req, res) => {
+  // Pet details endpoint for medical records
+  app.get("/api/pets/:id", async (req, res) => {
+    try {
+      const pet = await db
+        .select({
+          id: pets.id,
+          name: pets.name,
+          type: pets.type,
+          breed: pets.breed,
+          age: pets.age,
+          gender: pets.gender,
+        })
+        .from(pets)
+        .where(eq(pets.id, parseInt(req.params.id)))
+        .limit(1);
+
+      if (!pet.length) {
+        return res.status(404).json({ error: "Pet not found" });
+      }
+
+      res.json(pet[0]);
+    } catch (error) {
+      console.error('Error fetching pet details:', error);
+      res.status(500).json({ error: "Failed to fetch pet details" });
+    }
+  });
+
     try {
       const results = await db
         .select()

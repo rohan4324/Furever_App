@@ -17,7 +17,7 @@ import Cart from "./pages/Cart";
 import Navbar from "./components/layout/Navbar";
 import Vaccination from "./pages/health/Vaccination";
 import VetConnect from "./pages/health/VetConnect";
-import CheckUps from "./pages/health/CheckUps";
+
 import PetCareGuides from "./pages/guides/PetCareGuides";
 import Insurance from "./pages/insurance/Insurance";
 import MedicalHistory from "./pages/health/MedicalHistory";
@@ -39,7 +39,7 @@ function Router() {
           <Route path="/cart" component={Cart} />
           <Route path="/health/vaccination" component={Vaccination} />
           <Route path="/vet-connect" component={VetConnect} />
-          <Route path="/health/checkups" component={CheckUps} />
+          
           <Route path="/health/medical-history" component={MedicalHistory} />
           <Route path="/guides" component={PetCareGuides} />
           <Route path="/insurance" component={Insurance} />
