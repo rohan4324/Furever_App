@@ -64,7 +64,11 @@ export default function ShopCategory() {
 
   const addToCartMutation = useMutation({
     mutationFn: async (productId: number) => {
-      if (!authData) {
+      const authCheck = await fetch('/api/auth/check', {
+        credentials: 'include'
+      });
+      
+      if (!authCheck.ok) {
         window.location.assign('/login');
         throw new Error("Please login to add items to cart");
       }
@@ -90,6 +94,9 @@ export default function ShopCategory() {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
     onError: (error) => {
+      if (error.message === "Please login to add items to cart") {
+        window.location.assign('/login');
+      }
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add item to cart",

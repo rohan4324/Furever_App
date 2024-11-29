@@ -365,11 +365,23 @@ export function registerRoutes(app: Express) {
 
   // Product routes
   app.get("/api/auth/check", (req, res) => {
+    console.log("Session:", req.session);
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    res.json({ authenticated: true });
+    res.json({ authenticated: true, userId: req.session.userId });
   });
+
+  // Add auth middleware
+  const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    next();
+  };
+
+  // Apply middleware to cart routes
+  app.use("/api/cart", requireAuth);
 
   app.get("/api/products", async (req, res) => {
     try {

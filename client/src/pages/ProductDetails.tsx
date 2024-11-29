@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useParams } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Product } from "@db/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -12,6 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+interface Product {
+  id: number;
+  name: string;
+  price: string;
+  images: string[];
+  brand: string;
+  description: string;
+  category: string;
+  subCategory: string;
+  petType: string[];
+  stock: number;
+}
 
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
@@ -35,12 +47,25 @@ export default function ProductDetails() {
 
   const addToCartMutation = useMutation({
     mutationFn: async () => {
+      const authCheck = await fetch('/api/auth/check', {
+        credentials: 'include'
+      });
+    
+      if (!authCheck.ok) {
+        window.location.assign('/login');
+        throw new Error("Please login to add items to cart");
+      }
+
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, quantity }),
+        credentials: 'include'
       });
-      if (!res.ok) throw new Error("Failed to add to cart");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add to cart");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -50,10 +75,13 @@ export default function ProductDetails() {
       });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
-    onError: () => {
+    onError: (error) => {
+      if (error instanceof Error && error.message === "Please login to add items to cart") {
+        window.location.assign('/login');
+      }
       toast({
         title: "Error",
-        description: "Failed to add item to cart. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add item to cart",
         variant: "destructive",
       });
     },
@@ -85,20 +113,32 @@ export default function ProductDetails() {
         <div className="space-y-4">
           <div className="aspect-square overflow-hidden rounded-lg">
             <img
-              src={product.images[0]}
+              src={product.images[0]?.startsWith('/') ? product.images[0] : `/images/products/${product.images[0]}`}
               alt={product.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.onerror = null;
+                target.src = '/images/products/placeholder.jpg';
+              }}
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {(Array.isArray(product.images) ? product.images.slice(1) : []).map((image: string, index: number) => (
-              <img
-                key={index}
-                src={image}
-                alt={`${product.name} view ${index + 2}`}
-                className="aspect-square rounded-lg object-cover cursor-pointer hover:opacity-80"
-              />
-            ))}
+            {product.images && product.images.length > 1 && 
+              product.images.slice(1).map((image, index) => (
+                <img
+                  key={index}
+                  src={image.startsWith('/') ? image : `/images/products/${image}`}
+                  alt={`${product.name} view ${index + 2}`}
+                  className="aspect-square rounded-lg object-cover cursor-pointer hover:opacity-80"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.src = '/images/products/placeholder.jpg';
+                  }}
+                />
+              ))
+            }
           </div>
         </div>
 
