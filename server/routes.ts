@@ -537,11 +537,11 @@ export function registerRoutes(app: Express) {
     let query = baseQuery;
     
     if (category) {
-      query = baseQuery.where(eq(products.category, category));
+      query = query.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]`);
+      query = query.where(sql<boolean>`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
     // Apply sorting with proper type handling
@@ -553,7 +553,7 @@ export function registerRoutes(app: Express) {
         undefined;
       
       if (orderByClause) {
-        query = baseQuery.orderBy(orderByClause);
+        query = query.orderBy(orderByClause);
       }
     }
     
@@ -869,8 +869,8 @@ export function registerRoutes(app: Express) {
           clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
           user: {
             id: users.id,
-            name: users.name,
-            email: users.email
+            name: sql<string>`${users.name}::text`,
+            email: sql<string>`${users.email}::text`
           }
         }
       })
