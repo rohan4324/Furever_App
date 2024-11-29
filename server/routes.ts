@@ -361,6 +361,13 @@ export function registerRoutes(app: Express) {
   });
 
   // Product routes
+  app.get("/api/auth/check", (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    res.json({ authenticated: true });
+  });
+
   app.get("/api/products", async (req, res) => {
     try {
       const { category, sortBy, petType } = req.query;

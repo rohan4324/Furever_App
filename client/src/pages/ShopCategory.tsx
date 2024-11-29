@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function ShopCategory() {
   const [location] = useLocation();
@@ -22,9 +23,28 @@ export default function ShopCategory() {
     "rating",
   );
   const [petType, setPetType] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleBuyNow = async (productId: number) => {
+    const res = await fetch('/api/auth/check', {
+      credentials: 'include'
+    });
+    
+    if (!res.ok) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to continue with purchase",
+        variant: "destructive",
+      });
+      window.location.assign('/login');
+      return;
+    }
+    
+    window.location.assign('/checkout');
+  };
 
   const addToCartMutation = useMutation({
     mutationFn: async (productId: number) => {
@@ -95,11 +115,22 @@ export default function ShopCategory() {
   return (
     <div className="space-y-8">
       {/* Add cart icon and count at the top */}
-      <div className="flex justify-end items-center gap-2">
-        <Link to="/cart" className="flex items-center gap-2 hover:text-primary">
-          <ShoppingCart className="h-5 w-5" />
-          {/* Add cart count here if available */}
-        </Link>
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-end items-center gap-2">
+          <Link to="/cart" className="flex items-center gap-2 hover:text-primary">
+            <ShoppingCart className="h-5 w-5" />
+            {/* Add cart count here if available */}
+          </Link>
+        </div>
+        <div className="w-full max-w-md mx-auto">
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div className="text-center">
@@ -153,7 +184,11 @@ export default function ShopCategory() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products?.map((product) => (
+          {products?.filter(product => 
+            searchQuery === "" || 
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.description.toLowerCase().includes(searchQuery.toLowerCase())
+          ).map((product) => (
             <Card key={product.id} className="overflow-hidden group">
               <div className="aspect-square overflow-hidden">
                 <img
@@ -187,7 +222,7 @@ export default function ShopCategory() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => window.location.assign('/checkout')}
+                        onClick={() => handleBuyNow(product.id)}
                       >
                         Buy Now
                       </Button>
