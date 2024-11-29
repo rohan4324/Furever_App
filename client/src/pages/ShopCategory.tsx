@@ -130,7 +130,7 @@ export default function ShopCategory() {
                   <span className="font-medium">${product.price}</span>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.assign(`/shop/product/${product.id}`)}
+                    onClick={() => navigate(`/shop/product/${product.id}`)}
                   >
                     View Details
                   </Button>

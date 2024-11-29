@@ -16,9 +16,13 @@ import {
 export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
-  const [, params] = useParams();
-  const productId = params?.id;
+  const [location] = useLocation();
+  const productId = location.split('/').pop();
   const queryClient = useQueryClient();
+
+  if (!productId) {
+    return <div className="text-center py-8">Product not found</div>;
+  }
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", productId],
