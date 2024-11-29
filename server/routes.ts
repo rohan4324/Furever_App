@@ -656,13 +656,13 @@ export function registerRoutes(app: Express) {
         .select({
           appointment: vetAppointments,
           veterinarian: {
-            id: Number(veterinarians.id),
-            clinicAddress: String(veterinarians.clinicAddress),
-            clinicPhone: String(veterinarians.clinicPhone),
+            id: veterinarians.id,
+            clinicAddress: veterinarians.clinicAddress,
+            clinicPhone: veterinarians.clinicPhone,
             user: {
-              id: Number(users.id),
-              name: String(users.name),
-              email: String(users.email)
+              id: users.id,
+              name: users.name,
+              email: users.email
             }
           }
         })
