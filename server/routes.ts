@@ -126,31 +126,32 @@ export function registerRoutes(app: Express) {
   // Register error handler
   app.use(errorHandler);
   // Breeder routes
-  app.get("/api/breeders", async (req, res) => {
-    try {
-      const results = await db
-        .select({
-          id: breeders.id,
-          userId: breeders.userId,
-          description: breeders.description,
-          address: breeders.address,
-          phone: breeders.phone,
-          website: breeders.website,
-          specializations: breeders.specializations,
-          verificationStatus: breeders.verificationStatus,
-          user: {
-            id: users.id,
-            name: users.name,
-            email: users.email
-          }
-        })
-        .from(breeders)
-        .leftJoin(users, eq(breeders.userId, users.id));
-      res.json(results);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch breeders" });
+  app.get("/api/breeders", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: breeders.id,
+        userId: breeders.userId,
+        description: sql<string>`${breeders.description}::text`,
+        address: sql<string>`${breeders.address}::text`,
+        phone: sql<string>`${breeders.phone}::text`,
+        website: sql<string>`${breeders.website}::text`,
+        specializations: breeders.specializations,
+        verificationStatus: breeders.verificationStatus,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        }
+      })
+      .from(breeders)
+      .leftJoin(users, eq(breeders.userId, users.id));
+    
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No breeders found');
     }
-  });
+    
+    res.json(results);
+  }));
 
   // Initialize passport
   app.use(passport.initialize());
@@ -383,70 +384,125 @@ export function registerRoutes(app: Express) {
   });
 
   // Shelter routes
-  app.get("/api/shelters", async (req, res) => {
-    try {
-      const results = await db
-        .select({
-          id: shelters.id,
-          userId: shelters.userId,
-          description: shelters.description,
-          address: shelters.address,
-          phone: shelters.phone,
-          website: shelters.website,
-          verificationStatus: shelters.verificationStatus,
-          user: {
-            id: users.id,
-            name: users.name,
-            email: users.email
-          }
-        })
-        .from(shelters)
-        .leftJoin(users, eq(shelters.userId, users.id));
-      res.json(results);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch shelters" });
+  app.get("/api/shelters", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: shelters.id,
+        userId: shelters.userId,
+        description: sql<string>`${shelters.description}::text`,
+        address: sql<string>`${shelters.address}::text`,
+        phone: sql<string>`${shelters.phone}::text`,
+        website: sql<string>`${shelters.website}::text`,
+        verificationStatus: shelters.verificationStatus,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        }
+      })
+      .from(shelters)
+      .leftJoin(users, eq(shelters.userId, users.id));
+    
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No shelters found');
     }
-  });
+    
+    res.json(results);
+  }));
 
   // Messages routes
-  app.post("/api/messages", async (req, res) => {
+  app.post("/api/messages", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to send messages');
     }
 
-    try {
-      const message = await db
-        .insert(messages)
-        .values({
-          fromUserId: req.session.userId,
-          ...req.body,
-        })
-        .returning();
-      res.json(message[0]);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to send message" });
+    const messageSchema = z.object({
+      toUserId: z.number(),
+      content: z.string().min(1, 'Message content cannot be empty'),
+    });
+
+    const validatedData = messageSchema.parse(req.body);
+
+    // Verify recipient user exists
+    const recipientUser = await db.query.users.findFirst({
+      where: eq(users.id, validatedData.toUserId),
+    });
+
+    if (!recipientUser) {
+      throw new AppError(404, 'NotFound', 'Recipient user not found');
     }
-  });
+
+    const message = await db
+      .insert(messages)
+      .values({
+        fromUserId: req.session.userId,
+        ...validatedData,
+      })
+      .returning();
+
+    res.json(message[0]);
+  }));
 
   // Adoption application routes
-  app.post("/api/applications", async (req, res) => {
+  app.post("/api/applications", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to submit an adoption application');
     }
 
-    try {
-      const application = await db
-        .insert(adoptionApplications)
-        .values({
-          userId: req.session.userId,
-          ...req.body,
-        })
-        .returning();
-      res.json(application[0]);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to submit application" });
+    const applicationSchema = z.object({
+      petId: z.number(),
+      status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+      homeType: z.enum(["house", "apartment", "other"]),
+      hasYard: z.boolean(),
+      otherPets: z.boolean(),
+      previousExperience: z.string(),
+      income: z.number().optional(),
+      occupation: z.string(),
+      familySize: z.number(),
+      reasonForAdoption: z.string(),
+      additionalNotes: z.string().optional(),
+    });
+
+    const validatedData = applicationSchema.parse(req.body);
+
+    // Verify pet exists and is available
+    const pet = await db.query.pets.findFirst({
+      where: and(
+        eq(pets.id, validatedData.petId),
+        eq(pets.status, "available")
+      ),
+    });
+
+    if (!pet) {
+      throw new AppError(404, 'NotFound', 'Pet not found or is no longer available for adoption');
     }
-  });
+
+    // Check if user already has a pending application for this pet
+    const existingApplication = await db
+      .select()
+      .from(adoptionApplications)
+      .where(
+        and(
+          eq(adoptionApplications.userId, req.session.userId),
+          eq(adoptionApplications.petId, validatedData.petId),
+          eq(adoptionApplications.status, "pending")
+        )
+      );
+
+    if (existingApplication.length > 0) {
+      throw new AppError(409, 'Conflict', 'You already have a pending application for this pet');
+    }
+
+    const application = await db
+      .insert(adoptionApplications)
+      .values({
+        userId: req.session.userId,
+        ...validatedData,
+      })
+      .returning();
+
+    res.json(application[0]);
+  }));
 
   // Product routes
   app.get("/api/auth/check", (req, res) => {
@@ -468,185 +524,196 @@ export function registerRoutes(app: Express) {
   // Apply middleware to cart routes
   app.use("/api/cart", requireAuth);
 
-  app.get("/api/products", async (req, res) => {
-    try {
-      const { category, sortBy, petType } = req.query;
-      let query;
-      
-      if (category && ["food", "accessories", "grooming", "training", "safety"].includes(category as string)) {
-        query = db.select()
-          .from(products)
-          .where(eq(products.category, category as "food" | "accessories" | "grooming" | "training" | "safety"));
-      } else {
-        query = db.select().from(products);
-      }
-      
-      if (petType && petType !== "all") {
-        query = db.select()
-          .from(products)
-          .where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
-      }
+  app.get("/api/products", asyncHandler(async (req, res) => {
+    const filterSchema = z.object({
+      category: z.enum(["food", "accessories", "grooming", "training", "safety"]).optional(),
+      sortBy: z.enum(["price_asc", "price_desc", "rating"]).optional(),
+      petType: z.string().optional(),
+    });
 
-      // Apply sorting
+    const { category, sortBy, petType } = filterSchema.parse(req.query);
+    let query = db.select().from(products);
+    
+    if (category) {
+      query = query.where(eq(products.category, category));
+    }
+    
+    if (petType && petType !== "all") {
+      query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+    }
+
+    // Apply sorting
+    if (sortBy) {
       switch(sortBy) {
         case "price_asc":
-          query = db.select()
-            .from(products)
-            .orderBy(asc(products.price));
+          query = query.orderBy(asc(products.price));
           break;
         case "price_desc":
-          query = db.select()
-            .from(products)
-            .orderBy(desc(products.price));
+          query = query.orderBy(desc(products.price));
           break;
         case "rating":
-          query = db.select()
-            .from(products)
-            .orderBy(desc(products.rating));
+          query = query.orderBy(desc(products.rating));
           break;
-        default:
-          query = db.select().from(products);
       }
-      
-      const results = await query;
-      res.json(results);
-    } catch (error) {
-      console.error('Error in /api/products:', error);
-      res.status(500).json({ error: "Failed to fetch products" });
     }
-  });
+    
+    const results = await query;
+    
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No products found matching the criteria');
+    }
+    
+    res.json(results);
+  }));
 
-  app.get("/api/products/:id", async (req, res) => {
-    try {
-      const product = await db.query.products.findFirst({
-        where: eq(products.id, parseInt(req.params.id)),
-      });
-      
-      if (!product) {
-        return res.status(404).json({ error: "Product not found" });
-      }
-      
-      res.json(product);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch product" });
+  app.get("/api/products/:id", asyncHandler(async (req, res) => {
+    const productId = parseInt(req.params.id);
+    if (isNaN(productId)) {
+      throw new AppError(400, 'ValidationError', 'Invalid product ID format');
     }
-  });
+
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+    });
+    
+    if (!product) {
+      throw new AppError(404, 'NotFound', 'Product not found');
+    }
+    
+    res.json(product);
+  }));
 
   // Cart routes
-  app.get("/api/cart", async (req, res) => {
+  app.get("/api/cart", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to view cart items');
     }
 
-    try {
-      const items = await db
-        .select({
-          id: cartItems.id,
-          quantity: cartItems.quantity,
-          product: products
-        })
-        .from(cartItems)
-        .leftJoin(products, eq(cartItems.productId, products.id))
-        .where(eq(cartItems.userId, req.session.userId));
+    const items = await db
+      .select({
+        id: cartItems.id,
+        quantity: cartItems.quantity,
+        product: products
+      })
+      .from(cartItems)
+      .leftJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.userId, req.session.userId));
 
-      res.json(items);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch cart items" });
+    if (!items.length) {
+      throw new AppError(404, 'NotFound', 'Your cart is empty');
     }
-  });
 
-  app.post("/api/cart", async (req, res) => {
+    res.json(items);
+  }));
+
+  app.post("/api/cart", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to add items to cart');
     }
 
-    try {
-      // Check if item already exists in cart
-      const existingItem = await db
-        .select()
-        .from(cartItems)
-        .where(and(
-          eq(cartItems.userId, req.session.userId),
-          eq(cartItems.productId, req.body.productId)
-        ))
-        .limit(1);
+    const cartItemSchema = z.object({
+      productId: z.number(),
+      quantity: z.number().min(1).default(1),
+      price: z.number().min(0),
+    });
 
-      if (existingItem.length > 0) {
-        // Update quantity if item exists
-        const updated = await db
-          .update(cartItems)
-          .set({ 
-            quantity: existingItem[0].quantity + (req.body.quantity || 1)
-          })
-          .where(eq(cartItems.id, existingItem[0].id))
-          .returning();
-        return res.json(updated[0]);
-      }
+    const validatedData = cartItemSchema.parse(req.body);
 
-      // Parse and validate price
-      const price = parseFloat(req.body.price);
-      if (isNaN(price)) {
-        throw new Error("Invalid price format");
-      }
+    // Verify product exists
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, validatedData.productId),
+    });
 
-      // Add new item if it doesn't exist
-      const cartItem = await db
-        .insert(cartItems)
-        .values({
-          userId: req.session.userId,
-          productId: req.body.productId,
-          quantity: req.body.quantity || 1
-        })
-        .returning();
-      res.json(cartItem[0]);
-    } catch (error) {
-      console.error('Cart error:', error);
-      res.status(400).json({ error: "Failed to add item to cart" });
-    }
-  });
-
-  app.patch("/api/cart/:id", async (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!product) {
+      throw new AppError(404, 'NotFound', 'Product not found');
     }
 
-    try {
-      const cartItem = await db
+    // Check if item already exists in cart
+    const existingItem = await db
+      .select()
+      .from(cartItems)
+      .where(and(
+        eq(cartItems.userId, req.session.userId),
+        eq(cartItems.productId, validatedData.productId)
+      ))
+      .limit(1);
+
+    if (existingItem.length > 0) {
+      // Update quantity if item exists
+      const updated = await db
         .update(cartItems)
-        .set({ quantity: req.body.quantity })
-        .where(and(
-          eq(cartItems.id, parseInt(req.params.id)),
-          eq(cartItems.userId, req.session.userId)
-        ))
+        .set({ 
+          quantity: existingItem[0].quantity + validatedData.quantity
+        })
+        .where(eq(cartItems.id, existingItem[0].id))
         .returning();
-      
-      if (!cartItem.length) {
-        return res.status(404).json({ error: "Cart item not found" });
-      }
-      
-      res.json(cartItem[0]);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to update cart item" });
+      return res.json(updated[0]);
     }
-  });
 
-  app.delete("/api/cart/:id", async (req, res) => {
+    // Add new item if it doesn't exist
+    const cartItem = await db
+      .insert(cartItems)
+      .values({
+        userId: req.session.userId,
+        productId: validatedData.productId,
+        quantity: validatedData.quantity
+      })
+      .returning();
+
+    res.json(cartItem[0]);
+  }));
+
+  app.patch("/api/cart/:id", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to update cart items');
     }
 
-    try {
-      await db
-        .delete(cartItems)
-        .where(and(
-          eq(cartItems.id, parseInt(req.params.id)),
-          eq(cartItems.userId, req.session.userId)
-        ));
-      res.status(204).end();
-    } catch (error) {
-      res.status(400).json({ error: "Failed to remove cart item" });
+    const cartItemSchema = z.object({
+      quantity: z.number().min(1),
+    });
+
+    const validatedData = cartItemSchema.parse(req.body);
+    const cartItemId = parseInt(req.params.id);
+
+    if (isNaN(cartItemId)) {
+      throw new AppError(400, 'ValidationError', 'Invalid cart item ID format');
     }
-  });
+
+    const cartItem = await db
+      .update(cartItems)
+      .set({ quantity: validatedData.quantity })
+      .where(and(
+        eq(cartItems.id, cartItemId),
+        eq(cartItems.userId, req.session.userId)
+      ))
+      .returning();
+    
+    if (!cartItem.length) {
+      throw new AppError(404, 'NotFound', 'Cart item not found');
+    }
+    
+    res.json(cartItem[0]);
+  }));
+
+  app.delete("/api/cart/:id", asyncHandler(async (req, res) => {
+    if (!req.session.userId) {
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to remove cart items');
+    }
+
+    const cartItemId = parseInt(req.params.id);
+    if (isNaN(cartItemId)) {
+      throw new AppError(400, 'ValidationError', 'Invalid cart item ID format');
+    }
+
+    await db
+      .delete(cartItems)
+      .where(and(
+        eq(cartItems.id, cartItemId),
+        eq(cartItems.userId, req.session.userId)
+      ));
+
+    res.status(204).end();
+  }));
 
   // Health Services Routes
   app.get("/api/veterinarians", asyncHandler(async (req, res) => {
@@ -676,91 +743,127 @@ export function registerRoutes(app: Express) {
     res.json(results);
   }));
 
-  app.post("/api/veterinarians", async (req, res) => {
+  app.post("/api/veterinarians", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to create a veterinarian profile');
     }
 
-    try {
-      const vet = await db
-        .insert(veterinarians)
-        .values({
-          userId: req.session.userId,
-          ...req.body,
-        })
-        .returning();
-      res.json(vet[0]);
-    } catch (error) {
-      console.error('Error creating veterinarian:', error);
-      res.status(400).json({ error: "Failed to create veterinarian profile" });
-    }
-  });
+    const vetSchema = z.object({
+      specializations: z.array(z.string()),
+      qualifications: z.array(z.string()),
+      clinicAddress: z.string(),
+      clinicPhone: z.string(),
+      availableSlots: z.record(z.string(), z.array(z.string())),
+    });
 
-  app.get("/api/vaccinations/:petId", async (req, res) => {
-    try {
-      const results = await db
-        .select()
-        .from(vaccinations)
-        .where(eq(vaccinations.petId, parseInt(req.params.petId)));
-      res.json(results);
-    } catch (error) {
-      console.error('Error fetching vaccinations:', error);
-      res.status(500).json({ error: "Failed to fetch vaccination records" });
-    }
-  });
+    const validatedData = vetSchema.parse(req.body);
+    
+    const existingVet = await db.query.veterinarians.findFirst({
+      where: eq(veterinarians.userId, req.session.userId),
+    });
 
-  app.post("/api/vaccinations", async (req, res) => {
+    if (existingVet) {
+      throw new AppError(409, 'Conflict', 'Veterinarian profile already exists for this user');
+    }
+
+    const vet = await db
+      .insert(veterinarians)
+      .values({
+        userId: req.session.userId,
+        ...validatedData,
+      })
+      .returning();
+
+    res.json(vet[0]);
+  }));
+
+  app.get("/api/vaccinations/:petId", asyncHandler(async (req, res) => {
+    const petId = parseInt(req.params.petId);
+    if (isNaN(petId)) {
+      throw new AppError(400, 'ValidationError', 'Invalid pet ID format');
+    }
+
+    const results = await db
+      .select()
+      .from(vaccinations)
+      .where(eq(vaccinations.petId, petId));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No vaccination records found for this pet');
+    }
+
+    res.json(results);
+  }));
+
+  app.post("/api/vaccinations", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to create vaccination records');
     }
 
-    try {
-      const vaccination = await db
-        .insert(vaccinations)
-        .values(req.body)
-        .returning();
-      res.json(vaccination[0]);
-    } catch (error) {
-      console.error('Error creating vaccination record:', error);
-      res.status(400).json({ error: "Failed to create vaccination record" });
-    }
-  });
+    const vaccinationSchema = z.object({
+      petId: z.number(),
+      name: z.string(),
+      date: z.string().transform(str => new Date(str)),
+      nextDueDate: z.string().transform(str => new Date(str)).optional(),
+      veterinarianId: z.number().optional(),
+      notes: z.string().optional(),
+      documentUrl: z.string().optional(),
+    });
 
-  app.get("/api/appointments", async (req, res) => {
+    const validatedData = vaccinationSchema.parse(req.body);
+
+    // Verify pet exists
+    const pet = await db.query.pets.findFirst({
+      where: eq(pets.id, validatedData.petId),
+    });
+
+    if (!pet) {
+      throw new AppError(404, 'NotFound', 'Pet not found');
+    }
+
+    const vaccination = await db
+      .insert(vaccinations)
+      .values(validatedData)
+      .returning();
+
+    res.json(vaccination[0]);
+  }));
+
+  app.get("/api/appointments", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to view appointments');
     }
 
-    try {
-      const results = await db
-        .select({
-          id: vetAppointments.id,
-          petId: vetAppointments.petId,
-          dateTime: vetAppointments.dateTime,
-          type: vetAppointments.type,
-          status: vetAppointments.status,
-          notes: vetAppointments.notes,
-          veterinarian: {
-            id: veterinarians.id,
-            clinicAddress: veterinarians.clinicAddress,
-            clinicPhone: veterinarians.clinicPhone,
-            user: {
-              id: users.id,
-              name: users.name,
-              email: users.email
-            }
+    const results = await db
+      .select({
+        id: vetAppointments.id,
+        petId: vetAppointments.petId,
+        dateTime: vetAppointments.dateTime,
+        type: vetAppointments.type,
+        status: vetAppointments.status,
+        notes: vetAppointments.notes,
+        veterinarian: {
+          id: veterinarians.id,
+          clinicAddress: sql<string>`${veterinarians.clinicAddress}::text`,
+          clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
+          user: {
+            id: users.id,
+            name: sql<string>`${users.name}::text`,
+            email: sql<string>`${users.email}::text`
           }
-        })
-        .from(vetAppointments)
-        .leftJoin(veterinarians, eq(vetAppointments.veterinarianId, veterinarians.id))
-        .leftJoin(users, eq(veterinarians.userId, users.id))
-        .where(eq(vetAppointments.userId, req.session.userId));
-      res.json(results);
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      res.status(500).json({ error: "Failed to fetch appointments" });
+        }
+      })
+      .from(vetAppointments)
+      .leftJoin(veterinarians, eq(vetAppointments.veterinarianId, veterinarians.id))
+      .leftJoin(users, eq(veterinarians.userId, users.id))
+      .where(eq(vetAppointments.userId, req.session.userId));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No appointments found');
     }
-  });
+
+    res.json(results);
+  }));
 
   // Video consultation signaling
 app.post("/api/video-signal", async (req, res) => {
@@ -780,25 +883,50 @@ app.post("/api/video-signal", async (req, res) => {
   }
 });
 
-app.post("/api/appointments", async (req, res) => {
+app.post("/api/appointments", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to create appointments');
     }
 
-    try {
-      const appointment = await db
-        .insert(vetAppointments)
-        .values({
-          userId: req.session.userId,
-          ...req.body,
-        })
-        .returning();
-      res.json(appointment[0]);
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-      res.status(400).json({ error: "Failed to create appointment" });
+    const appointmentSchema = z.object({
+      petId: z.number(),
+      veterinarianId: z.number(),
+      dateTime: z.string().transform(str => new Date(str)),
+      type: z.enum(["checkup", "vaccination", "emergency", "grooming", "consultation"]),
+      notes: z.string().optional(),
+    });
+
+    const validatedData = appointmentSchema.parse(req.body);
+
+    // Verify pet exists
+    const pet = await db.query.pets.findFirst({
+      where: eq(pets.id, validatedData.petId),
+    });
+
+    if (!pet) {
+      throw new AppError(404, 'NotFound', 'Pet not found');
     }
-  });
+
+    // Verify veterinarian exists
+    const vet = await db.query.veterinarians.findFirst({
+      where: eq(veterinarians.id, validatedData.veterinarianId),
+    });
+
+    if (!vet) {
+      throw new AppError(404, 'NotFound', 'Veterinarian not found');
+    }
+
+    const appointment = await db
+      .insert(vetAppointments)
+      .values({
+        userId: req.session.userId,
+        ...validatedData,
+        status: "scheduled",
+      })
+      .returning();
+
+    res.json(appointment[0]);
+  }));
 
   // QR Code Generation endpoint
   app.post("/api/generate-qr", async (req, res) => {
@@ -821,62 +949,79 @@ app.post("/api/appointments", async (req, res) => {
     }
   });
 
-  app.get("/api/health-records/:petId", async (req, res) => {
-  // Pet details endpoint for medical records
-  app.get("/api/pets/:id", async (req, res) => {
-    try {
-      const pet = await db
-        .select({
-          id: pets.id,
-          name: pets.name,
-          type: pets.type,
-          breed: pets.breed,
-          age: pets.age,
-          gender: pets.gender,
-        })
-        .from(pets)
-        .where(eq(pets.id, parseInt(req.params.id)))
-        .limit(1);
-
-      if (!pet.length) {
-        return res.status(404).json({ error: "Pet not found" });
-      }
-
-      res.json(pet[0]);
-    } catch (error) {
-      console.error('Error fetching pet details:', error);
-      res.status(500).json({ error: "Failed to fetch pet details" });
+  app.get("/api/health-records/:petId", asyncHandler(async (req, res) => {
+    const petId = parseInt(req.params.petId);
+    if (isNaN(petId)) {
+      throw new AppError(400, 'ValidationError', 'Invalid pet ID format');
     }
-  });
 
-    try {
-      const results = await db
-        .select()
-        .from(healthRecords)
-        .where(eq(healthRecords.petId, parseInt(req.params.petId)));
-      res.json(results);
-    } catch (error) {
-      console.error('Error fetching health records:', error);
-      res.status(500).json({ error: "Failed to fetch health records" });
+    // Verify pet exists
+    const pet = await db.query.pets.findFirst({
+      where: eq(pets.id, petId),
+    });
+
+    if (!pet) {
+      throw new AppError(404, 'NotFound', 'Pet not found');
     }
-  });
 
-  app.post("/api/health-records", async (req, res) => {
+    const results = await db
+      .select()
+      .from(healthRecords)
+      .where(eq(healthRecords.petId, petId));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No health records found for this pet');
+    }
+
+    res.json(results);
+  }));
+
+  app.post("/api/health-records", asyncHandler(async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      throw new AppError(401, 'Unauthorized', 'You must be logged in to create health records');
     }
 
-    try {
-      const record = await db
-        .insert(healthRecords)
-        .values(req.body)
-        .returning();
-      res.json(record[0]);
-    } catch (error) {
-      console.error('Error creating health record:', error);
-      res.status(400).json({ error: "Failed to create health record" });
+    const healthRecordSchema = z.object({
+      petId: z.number(),
+      type: z.enum(["condition", "medication", "allergy", "surgery", "test_result"]),
+      description: z.string(),
+      date: z.string().transform(str => new Date(str)),
+      severity: z.enum(["low", "medium", "high"]).optional(),
+      notes: z.string().optional(),
+      veterinarianId: z.number().optional(),
+      documentUrl: z.string().optional(),
+      attachments: z.array(z.string()).optional(),
+    });
+
+    const validatedData = healthRecordSchema.parse(req.body);
+
+    // Verify pet exists
+    const pet = await db.query.pets.findFirst({
+      where: eq(pets.id, validatedData.petId),
+    });
+
+    if (!pet) {
+      throw new AppError(404, 'NotFound', 'Pet not found');
     }
-  });
+
+    // If veterinarianId is provided, verify veterinarian exists
+    if (validatedData.veterinarianId) {
+      const vet = await db.query.veterinarians.findFirst({
+        where: eq(veterinarians.id, validatedData.veterinarianId),
+      });
+
+      if (!vet) {
+        throw new AppError(404, 'NotFound', 'Veterinarian not found');
+      }
+    }
+
+    const record = await db
+      .insert(healthRecords)
+      .values(validatedData)
+      .returning();
+
+    res.json(record[0]);
+  }));
   // Shared record view endpoint
   app.get("/api/shared-record/:recordId", async (req, res) => {
     try {
