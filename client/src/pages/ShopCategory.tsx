@@ -32,8 +32,12 @@ export default function ShopCategory() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, quantity: 1 }),
+        credentials: 'include' // Add this to include session cookie
       });
-      if (!res.ok) throw new Error("Failed to add to cart");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to add to cart");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -43,12 +47,16 @@ export default function ShopCategory() {
       });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add item to cart. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add item to cart",
         variant: "destructive",
       });
+      if (error instanceof Error && error.message === "Unauthorized") {
+        // Redirect to login if user is not authenticated
+        window.location.assign('/login');
+      }
     },
   });
 
@@ -159,27 +167,26 @@ export default function ShopCategory() {
                   }}
                 />
               </div>
-              <CardContent className="p-4 flex flex-col h-full">
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1 line-clamp-2">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {product.brand}
-                  </p>
-                </div>
-                <div className="mt-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-lg font-semibold">${product.price}</span>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-1">{product.name}</h3>
+                <p className="text-sm text-muted-foreground">{product.brand}</p>
+                
+                <div className="mt-4">
+                  <div className="flex flex-col gap-2">
+                    <p className="text-lg font-semibold">${product.price}</p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="flex-1"
                         onClick={() => addToCartMutation.mutate(product.id)}
+                        disabled={addToCartMutation.isPending}
                       >
-                        Add to Cart
+                        {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
                       </Button>
                       <Button
-                        variant="default"
                         size="sm"
+                        className="flex-1"
                         onClick={() => window.location.assign('/checkout')}
                       >
                         Buy Now
