@@ -53,15 +53,19 @@ export default function MedicalHistoryPage() {
     },
   });
 
-  // Fetch pets
-  const { data: pets, isLoading: isPetsLoading } = useQuery({
-    queryKey: ["pets"],
-    queryFn: async () => {
-      const res = await fetch("/api/pets");
-      if (!res.ok) throw new Error("Failed to fetch pets");
-      return res.json();
-    },
-  });
+  // Define animal types and state
+  const animalTypes = [
+    { id: 1, type: "Dog" },
+    { id: 2, type: "Cat" },
+    { id: 3, type: "Bird" },
+    { id: 4, type: "Fish" },
+    { id: 5, type: "Hamster" },
+    { id: 6, type: "Rabbit" },
+    { id: 7, type: "Guinea Pig" },
+    { id: 8, type: "Other" }
+  ];
+
+  const [selectedAnimalType, setSelectedAnimalType] = useState<string>("");
 
   // Fetch health records for selected pet
   const { data: healthRecords, refetch: refetchRecords } = useQuery({
@@ -116,22 +120,42 @@ export default function MedicalHistoryPage() {
 
   const handleShare = async (record: any) => {
     try {
+      // Create a QR code for the record
+      const qrCode = await fetch("/api/generate-qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recordId: record.id,
+          animalType: selectedAnimalType,
+          recordType: record.type,
+          date: record.date,
+          description: record.description,
+        }),
+      });
+
+      if (!qrCode.ok) {
+        throw new Error("Failed to generate QR code");
+      }
+
+      const { qrUrl, shareableLink } = await qrCode.json();
+
       // Create a formatted medical record for sharing
       const recordText = `
 Pet Medical Record
 Type: ${record.type}
+Animal: ${selectedAnimalType}
 Date: ${new Date(record.date).toLocaleDateString()}
 Description: ${record.description}
+Shareable Link: ${shareableLink}
       `.trim();
 
       await navigator.clipboard.writeText(recordText);
       
-      // Generate a temporary sharing link (in a real app, this would be a proper sharing mechanism)
-      const shareableLink = `${window.location.origin}/shared-record/${record.id}`;
-      
       toast({
         title: "Success",
-        description: "Medical record copied to clipboard and sharing link generated",
+        description: "Medical record copied to clipboard. QR code generated for easy sharing.",
       });
     } catch (err) {
       toast({
@@ -151,16 +175,7 @@ Description: ${record.description}
     { value: "test_result", label: "Test Result" },
   ];
 
-  if (isPetsLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8">Pet Medical History</h1>
-        <div className="flex items-center justify-center h-64">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -191,9 +206,9 @@ Description: ${record.description}
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {pets?.map((pet: any) => (
-                            <SelectItem key={pet.id} value={pet.id.toString()}>
-                              {pet.name}
+                          {animalTypes.map((animal) => (
+                            <SelectItem key={animal.id} value={animal.id.toString()}>
+                              {animal.type}
                             </SelectItem>
                           ))}
                         </SelectContent>
