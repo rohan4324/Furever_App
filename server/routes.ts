@@ -661,8 +661,8 @@ export function registerRoutes(app: Express) {
             clinicPhone: veterinarians.clinicPhone,
             user: {
               id: users.id,
-              name: users.name,
-              email: users.email
+              name: sql<string>`${users.name}`.as('name'),
+              email: sql<string>`${users.email}`.as('email')
             }
           }
         })
@@ -763,6 +763,33 @@ app.post("/api/appointments", async (req, res) => {
     } catch (error) {
       console.error('Error creating health record:', error);
       res.status(400).json({ error: "Failed to create health record" });
+    }
+  });
+  // Shared record view endpoint
+  app.get("/api/shared-record/:recordId", async (req, res) => {
+    try {
+      const record = await db
+        .select({
+          healthRecord: healthRecords,
+          pet: {
+            name: pets.name,
+            type: pets.type,
+            breed: pets.breed
+          }
+        })
+        .from(healthRecords)
+        .leftJoin(pets, eq(healthRecords.petId, pets.id))
+        .where(eq(healthRecords.id, parseInt(req.params.recordId)))
+        .limit(1);
+
+      if (!record.length) {
+        return res.status(404).json({ error: "Record not found" });
+      }
+
+      res.json(record[0]);
+    } catch (error) {
+      console.error('Error fetching shared record:', error);
+      res.status(500).json({ error: "Failed to fetch shared record" });
     }
   });
 }
