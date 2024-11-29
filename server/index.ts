@@ -4,12 +4,19 @@ import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
+import { Server } from "socket.io";
 
 // Extend Express Request type to include session
 declare module "express-session" {
   interface SessionData {
     userId?: number;
   }
+}
+
+// Video consultation room type
+interface VideoRoom {
+  appointmentId: string;
+  participants: string[];
 }
 
 function log(message: string) {
@@ -76,6 +83,48 @@ app.use((req, res, next) => {
 (async () => {
   registerRoutes(app);
   const server = createServer(app);
+  const io = new Server(server);
+  
+  // Store active video consultation rooms
+  const videoRooms = new Map<string, VideoRoom>();
+
+  // Handle WebSocket connections for video consultations
+  io.on("connection", (socket) => {
+    console.log("New client connected");
+
+    socket.on("join-room", ({ appointmentId, userId }) => {
+      let room = videoRooms.get(appointmentId);
+      if (!room) {
+        room = { appointmentId, participants: [] };
+        videoRooms.set(appointmentId, room);
+      }
+      
+      room.participants.push(userId);
+      socket.join(appointmentId);
+      
+      // Notify others in the room
+      socket.to(appointmentId).emit("user-connected", userId);
+    });
+
+    socket.on("video-signal", ({ appointmentId, signal, userId }) => {
+      socket.to(appointmentId).emit("video-signal", { signal, userId });
+    });
+
+    socket.on("leave-room", ({ appointmentId, userId }) => {
+      const room = videoRooms.get(appointmentId);
+      if (room) {
+        room.participants = room.participants.filter(id => id !== userId);
+        if (room.participants.length === 0) {
+          videoRooms.delete(appointmentId);
+        }
+      }
+      socket.to(appointmentId).emit("user-disconnected", userId);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Client disconnected");
+    });
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

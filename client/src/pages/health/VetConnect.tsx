@@ -67,6 +67,8 @@ export default function VetConnectPage() {
   const [selectedPetId, setSelectedPetId] = useState<string>("");
   const [selectedVet, setSelectedVet] = useState<VetWithUser | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
+  const [activeAppointmentId, setActiveAppointmentId] = useState<string>("");
   const [appointmentType, setAppointmentType] = useState<"consultation" | "checkup" | "emergency">("consultation");
 
   // Fetch veterinarians

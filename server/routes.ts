@@ -661,8 +661,8 @@ export function registerRoutes(app: Express) {
             clinicPhone: veterinarians.clinicPhone,
             user: {
               id: users.id,
-              name: users.name,
-              email: users.email
+              name: sql<string>`${users.name}`,
+              email: sql<string>`${users.email}`
             }
           }
         })
@@ -677,7 +677,25 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/appointments", async (req, res) => {
+  // Video consultation signaling
+app.post("/api/video-signal", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const { signal, appointmentId, type } = req.body;
+    
+    // Store the signal in the database or temporary storage
+    // For now, we'll just echo it back
+    res.json({ signal });
+  } catch (error) {
+    console.error('Error in video signaling:', error);
+    res.status(500).json({ error: "Failed to process video signal" });
+  }
+});
+
+app.post("/api/appointments", async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
