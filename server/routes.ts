@@ -255,7 +255,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: Express.Multer.File[] | undefined }, res) => {
+  app.post("/api/pets", upload.array("images", 5), async (req: Request & { files?: any }, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -366,10 +366,10 @@ export function registerRoutes(app: Express) {
       const { category, sortBy, petType } = req.query;
       let query;
       
-      if (category) {
+      if (category && ["food", "accessories", "grooming", "training", "safety"].includes(category as string)) {
         query = db.select()
           .from(products)
-          .where(eq(products.category, category as string));
+          .where(eq(products.category, category as "food" | "accessories" | "grooming" | "training" | "safety"));
       } else {
         query = db.select().from(products);
       }

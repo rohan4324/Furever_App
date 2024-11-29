@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
 import { Product } from "@db/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ShopCategory() {
   const [location] = useLocation();
@@ -21,6 +22,34 @@ export default function ShopCategory() {
   );
   const [petType, setPetType] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const addToCartMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, quantity: 1 }),
+      });
+      if (!res.ok) throw new Error("Failed to add to cart");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Added to cart",
+        description: "The item has been added to your cart.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const {
     data: products,
@@ -126,14 +155,23 @@ export default function ShopCategory() {
                 <p className="text-sm text-muted-foreground mb-2">
                   {product.brand}
                 </p>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-2">
                   <span className="font-medium">${product.price}</span>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(`/shop/product/${product.id}`)}
-                  >
-                    View Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addToCartMutation.mutate(product.id)}
+                    >
+                      Add to Cart
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.location.assign('/checkout')}
+                    >
+                      Buy Now
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
