@@ -5,14 +5,13 @@ import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import multer from "multer";
-import type { Express } from "express";
 import path from "path";
 import fs from "fs";
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(process.cwd(), "public/uploads");
+    const uploadDir = path.join(process.cwd(), "public/images/products");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -21,8 +20,11 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
+  }
 });
+
+// Update image paths in migrations
+const imageBaseUrl = "/images/products/";
 
 const upload = multer({
   storage: storage,
@@ -462,15 +464,40 @@ export function registerRoutes(app: Express) {
     }
 
     try {
+      // Check if item already exists in cart
+      const existingItem = await db
+        .select()
+        .from(cartItems)
+        .where(and(
+          eq(cartItems.userId, req.session.userId),
+          eq(cartItems.productId, req.body.productId)
+        ))
+        .limit(1);
+
+      if (existingItem.length > 0) {
+        // Update quantity if item exists
+        const updated = await db
+          .update(cartItems)
+          .set({ 
+            quantity: existingItem[0].quantity + (req.body.quantity || 1)
+          })
+          .where(eq(cartItems.id, existingItem[0].id))
+          .returning();
+        return res.json(updated[0]);
+      }
+
+      // Add new item if it doesn't exist
       const cartItem = await db
         .insert(cartItems)
         .values({
           userId: req.session.userId,
-          ...req.body,
+          productId: req.body.productId,
+          quantity: req.body.quantity || 1
         })
         .returning();
       res.json(cartItem[0]);
     } catch (error) {
+      console.error('Cart error:', error);
       res.status(400).json({ error: "Failed to add item to cart" });
     }
   });

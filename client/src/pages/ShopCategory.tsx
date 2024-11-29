@@ -189,13 +189,15 @@ export default function ShopCategory() {
             <Card key={product.id} className="overflow-hidden group">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src={product.images[0] || `https://placehold.co/600x400?text=${encodeURIComponent(product.name)}`}
+                  src={product.images[0]?.startsWith('/') 
+                    ? product.images[0] 
+                    : `/images/products/${product.images[0]}`}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
                     target.onerror = null;
-                    target.src = `https://placehold.co/600x400?text=${encodeURIComponent(product.name)}`;
+                    target.src = '/images/products/placeholder.jpg';
                   }}
                 />
               </div>
