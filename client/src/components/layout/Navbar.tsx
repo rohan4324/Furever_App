@@ -104,9 +104,13 @@ export default function Navbar() {
               <div className="font-medium">Pet Care Guides</div>
               <p className="text-sm text-muted-foreground">Essential tips for new pet parents</p>
             </div>
-            <div className="dropdown-item" onClick={() => setLocation("/training")}>
-              <div className="font-medium">Training Resources</div>
-              <p className="text-sm text-muted-foreground">Professional training tips</p>
+            <div className="dropdown-item" onClick={() => setLocation("/health/vaccination")}>
+              <div className="font-medium">Vaccination Schedule</div>
+              <p className="text-sm text-muted-foreground">Track and manage pet vaccinations</p>
+            </div>
+            <div className="dropdown-item" onClick={() => setLocation("/health/checkups")}>
+              <div className="font-medium">Health Check-Ups</div>
+              <p className="text-sm text-muted-foreground">Schedule regular health check-ups</p>
             </div>
             <div className="dropdown-item" onClick={() => setLocation("/vet-connect")}>
               <div className="font-medium">Vet Connect</div>

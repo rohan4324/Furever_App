@@ -1,6 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { db } from "../db";
-import { users, pets, shelters, breeders, messages, adoptionApplications, products, cartItems } from "@db/schema";
+import { 
+  users, pets, shelters, breeders, messages, 
+  adoptionApplications, products, cartItems,
+  veterinarians, vaccinations, vetAppointments, 
+  healthRecords 
+} from "@db/schema";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
