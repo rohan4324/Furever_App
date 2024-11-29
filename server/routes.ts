@@ -797,11 +797,19 @@ app.post("/api/appointments", async (req, res) => {
     try {
       const record = await db
         .select({
-          healthRecord: healthRecords,
+          id: healthRecords.id,
+          type: healthRecords.type,
+          description: healthRecords.description,
+          date: healthRecords.date,
+          severity: healthRecords.severity,
+          attachments: healthRecords.attachments,
+          notes: healthRecords.notes,
           pet: {
+            id: pets.id,
             name: pets.name,
             type: pets.type,
-            breed: pets.breed
+            breed: pets.breed,
+            age: pets.age
           }
         })
         .from(healthRecords)
