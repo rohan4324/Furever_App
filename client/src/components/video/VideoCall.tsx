@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import "@/lib/peer-polyfill";
+import { CustomEventEmitter } from "@/lib/peer-polyfill";
 import Peer from "simple-peer";
 import { io, Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
 import { Video, Mic, MicOff, VideoOff, PhoneOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 interface VideoCallProps {
   isInitiator?: boolean;
@@ -20,13 +22,20 @@ export function VideoCall({ isInitiator, onEnd, appointmentId }: VideoCallProps)
   const [error, setError] = useState<string>("");
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
   
   // Initialize socket connection
   useEffect(() => {
     const newSocket = io(window.location.origin);
     setSocket(newSocket);
 
+    const handleOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleOrientation);
     return () => {
+      window.removeEventListener('resize', handleOrientation);
       newSocket.close();
     };
   }, []);
@@ -35,44 +44,61 @@ export function VideoCall({ isInitiator, onEnd, appointmentId }: VideoCallProps)
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Request camera and microphone permissions
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        setStream(stream);
+    const initializeMedia = async () => {
+      try {
+        // Request camera and microphone permissions with constraints for mobile
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+
+        setStream(mediaStream);
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.srcObject = mediaStream;
         }
 
         const newPeer = new Peer({
           initiator: isInitiator,
-          stream,
+          stream: mediaStream,
           trickle: false,
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+          }
         });
 
-        // Join video consultation room
-        socket?.emit("join-room", { appointmentId, userId: "user-" + Math.random().toString(36).substr(2, 9) });
+        // Use custom event emitter for signaling
+        const emitter = new CustomEventEmitter();
+        
+        socket?.emit("join-room", {
+          appointmentId,
+          userId: `user-${Math.random().toString(36).substring(2)}`
+        });
 
         newPeer.on("signal", (data) => {
           socket?.emit("video-signal", {
             appointmentId,
             signal: data,
-            userId: "user-" + Math.random().toString(36).substr(2, 9)
+            userId: `user-${Math.random().toString(36).substring(2)}`
           });
         });
 
-        interface SignalData {
-          signal: Peer.SignalData;
-          userId: string;
-        }
-
-        // Handle incoming signals
-        socket?.on("video-signal", ({ signal }: SignalData) => {
+        socket?.on("video-signal", ({ signal }: { signal: Peer.SignalData }) => {
           newPeer.signal(signal);
         });
 
         newPeer.on("connect", () => {
           setConnected(true);
+          emitter.emit("peer-connected");
         });
 
         newPeer.on("stream", (remoteStream) => {
@@ -82,14 +108,17 @@ export function VideoCall({ isInitiator, onEnd, appointmentId }: VideoCallProps)
         });
 
         newPeer.on("error", (err) => {
-          setError("Connection error: " + err.message);
+          setError(`Connection error: ${err.message}`);
+          emitter.emit("peer-error", err);
         });
 
         setPeer(newPeer);
-      })
-      .catch((err) => {
-        setError("Failed to access camera/microphone: " + err.message);
-      });
+      } catch (err: any) {
+        setError(`Failed to access camera/microphone: ${err.message}`);
+      }
+    };
+
+    initializeMedia();
 
     return () => {
       if (stream) {
@@ -138,42 +167,61 @@ export function VideoCall({ isInitiator, onEnd, appointmentId }: VideoCallProps)
   }
 
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-black rounded-lg overflow-hidden">
+    <div className={cn(
+      "relative w-full h-full min-h-[400px] bg-black rounded-lg overflow-hidden",
+      isPortrait ? "flex flex-col" : "flex flex-row"
+    )}>
       <video
         ref={remoteVideoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-cover"
+        className={cn(
+          "object-cover",
+          isPortrait ? "w-full h-[60vh]" : "w-[70vw] h-full"
+        )}
       />
       <video
         ref={localVideoRef}
         autoPlay
         playsInline
         muted
-        className="absolute bottom-4 right-4 w-48 h-36 object-cover rounded-lg border-2 border-white"
+        className={cn(
+          "border-2 border-white rounded-lg",
+          isPortrait
+            ? "absolute bottom-20 right-4 w-32 h-24"
+            : "absolute bottom-4 right-4 w-48 h-36"
+        )}
       />
       
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+      <div className={cn(
+        "flex gap-4 bg-black/50 p-4",
+        isPortrait
+          ? "absolute bottom-0 left-0 right-0 justify-center"
+          : "absolute bottom-4 left-1/2 transform -translate-x-1/2"
+      )}>
         <Button
           variant={audioEnabled ? "default" : "destructive"}
           size="icon"
           onClick={toggleAudio}
+          className="rounded-full"
         >
-          {audioEnabled ? <Mic /> : <MicOff />}
+          {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
         </Button>
         <Button
           variant={videoEnabled ? "default" : "destructive"}
           size="icon"
           onClick={toggleVideo}
+          className="rounded-full"
         >
-          {videoEnabled ? <Video /> : <VideoOff />}
+          {videoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
         </Button>
         <Button
           variant="destructive"
           size="icon"
           onClick={endCall}
+          className="rounded-full"
         >
-          <PhoneOff />
+          <PhoneOff className="h-4 w-4" />
         </Button>
       </div>
     </div>
