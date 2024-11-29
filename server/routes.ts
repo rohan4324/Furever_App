@@ -532,30 +532,28 @@ export function registerRoutes(app: Express) {
     });
 
     const { category, sortBy, petType } = filterSchema.parse(req.query);
-    let query = db.select().from(products);
+    const baseQuery = db.select().from(products);
+    
+    let query = baseQuery;
     
     if (category) {
-      query = db.select()
-        .from(products)
-        .where(eq(products.category, category));
+      query = query.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = db.select()
-        .from(products)
-        .where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      query = query.where(sql<boolean>`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
-    // Apply sorting with proper type handling
+    // Apply sorting with proper type handling using type-safe orderBy
     if (sortBy) {
       const orderByClause = 
-        sortBy === "price_asc" ? asc(products.price) :
-        sortBy === "price_desc" ? desc(products.price) :
-        sortBy === "rating" ? desc(products.rating) :
+        sortBy === "price_asc" ? [asc(products.price)] :
+        sortBy === "price_desc" ? [desc(products.price)] :
+        sortBy === "rating" ? [desc(products.rating)] :
         undefined;
       
       if (orderByClause) {
-        query = query.orderBy(orderByClause);
+        query = query.orderBy(...orderByClause);
       }
     }
     
@@ -836,6 +834,26 @@ export function registerRoutes(app: Express) {
       throw new AppError(401, 'Unauthorized', 'You must be logged in to view appointments');
     }
 
+    type AppointmentResult = {
+      id: number;
+      petId: number;
+      dateTime: Date;
+      type: string;
+      status: string;
+      notes: string | null;
+      questionnaire: Record<string, any>;
+      veterinarian: {
+        id: number;
+        clinicAddress: string;
+        clinicPhone: string;
+        user: {
+          id: number;
+          name: string;
+          email: string;
+        }
+      }
+    };
+
     const results = await db
       .select({
         id: vetAppointments.id,
@@ -843,16 +861,16 @@ export function registerRoutes(app: Express) {
         dateTime: vetAppointments.dateTime,
         type: vetAppointments.type,
         status: vetAppointments.status,
-        notes: sql<string>`${vetAppointments.notes}::text`,
+        notes: sql<string | null>`NULLIF(${vetAppointments.notes}, '')::text`,
         questionnaire: vetAppointments.questionnaire,
         veterinarian: {
           id: veterinarians.id,
-          clinicAddress: veterinarians.clinicAddress,
-          clinicPhone: veterinarians.clinicPhone,
+          clinicAddress: sql<string>`${veterinarians.clinicAddress}::text`,
+          clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
           user: {
             id: users.id,
-            name: users.name,
-            email: users.email
+            name: sql<string>`${users.name}::text`,
+            email: sql<string>`${users.email}::text`
           }
         }
       })
