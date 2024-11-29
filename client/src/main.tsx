@@ -19,6 +19,7 @@ import Vaccination from "./pages/health/Vaccination";
 import VetDirectory from "./pages/health/VetDirectory";
 import CheckUps from "./pages/health/CheckUps";
 import PetCareGuides from "./pages/guides/PetCareGuides";
+import Insurance from "./pages/insurance/Insurance";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function Router() {
           <Route path="/health/vet-directory" component={VetDirectory} />
           <Route path="/health/checkups" component={CheckUps} />
           <Route path="/guides" component={PetCareGuides} />
+          <Route path="/insurance" component={Insurance} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>

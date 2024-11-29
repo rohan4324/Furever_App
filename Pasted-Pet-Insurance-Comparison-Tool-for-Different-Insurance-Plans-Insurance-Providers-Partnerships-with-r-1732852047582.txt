@@ -1,0 +1,56 @@
+Pet Insurance
+Comparison Tool for Different Insurance Plans
+Insurance Providers:
+Partnerships with reputable pet insurance companies in India.
+Plan Listings:
+Variety of plans covering accidents, illnesses, routine care.
+Details on coverage limits, exclusions, premiums.
+Comparison Feature:
+Side-by-side comparison of selected plans.
+Filters based on coverage type, cost, and pet age/species.
+Educational Resources:
+Articles explaining pet insurance benefits.
+Glossary of insurance terms.
+Customer Reviews:
+Feedback from other pet owners on their experiences.
+In-App Enrollment Process
+Application Form:
+Pre-filled with pet’s profile information.
+Additional questions as required by the insurer.
+Document Upload:
+Option to upload medical records or vet certificates.
+Quotation and Payment:
+Instant premium quotes.
+Secure payment gateways for policy purchase.
+Policy Management:
+Digital storage of policy documents.
+Renewal reminders and easy renewal process.
+Claims Process:
+Guidance on how to file claims.
+Tracking claim status within the app.
+User Journey for Pet Insurance
+Persona: Sunita, an experienced pet owner in Hyderabad with a new Golden Retriever puppy.
+Considering Insurance:
+Sunita wants to ensure her puppy is protected against unforeseen health issues.
+Exploring Options:
+She selects “Pet Insurance” from the app menu.
+Using the Comparison Tool:
+She inputs her puppy’s details: 4-month-old male Golden Retriever.
+She selects coverage preferences: accidents, illnesses, routine care.
+Reviewing Plans:
+The app displays several plans from different insurers.
+Sunita compares three plans side-by-side.
+Reading Reviews:
+She reads reviews from other users about their claim experiences.
+Selecting a Plan:
+Sunita chooses a plan that offers comprehensive coverage at a reasonable premium.
+Enrollment Process:
+She completes the application form, which is pre-filled with her and her pet’s information.
+She uploads the recent health check-up report.
+Payment:
+She pays the premium using her preferred payment method.
+Policy Confirmation:
+Sunita receives a digital copy of the policy.
+The app sets up reminders for policy renewal.
+Future Claims:
+If needed, Sunita can file claims directly through the app.

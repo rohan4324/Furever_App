@@ -116,6 +116,10 @@ export default function Navbar() {
               <div className="font-medium">Vet Connect</div>
               <p className="text-sm text-muted-foreground">Find veterinarians near you</p>
             </div>
+            <div className="dropdown-item" onClick={() => setLocation("/insurance")}>
+              <div className="font-medium">Pet Insurance</div>
+              <p className="text-sm text-muted-foreground">Compare and manage pet insurance plans</p>
+            </div>
           </div>
         </div>
 
