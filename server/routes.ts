@@ -660,9 +660,9 @@ export function registerRoutes(app: Express) {
             clinicAddress: veterinarians.clinicAddress,
             clinicPhone: veterinarians.clinicPhone,
             user: {
-              id: users.id,
-              name: sql<string>`${users.name}`,
-              email: sql<string>`${users.email}`
+              id: users.id as unknown as number,
+              name: users.name as unknown as string,
+              email: users.email as unknown as string
             }
           }
         })

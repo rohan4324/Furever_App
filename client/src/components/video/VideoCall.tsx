@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import "@/lib/peer-polyfill";
 import Peer from "simple-peer";
 import { io, Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
@@ -60,8 +61,13 @@ export function VideoCall({ isInitiator, onEnd, appointmentId }: VideoCallProps)
           });
         });
 
+        interface SignalData {
+          signal: Peer.SignalData;
+          userId: string;
+        }
+
         // Handle incoming signals
-        socket?.on("video-signal", ({ signal }) => {
+        socket?.on("video-signal", ({ signal }: SignalData) => {
           newPeer.signal(signal);
         });
 

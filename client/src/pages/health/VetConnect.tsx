@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -27,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Video consultation feature coming soon
 import type { Pet } from "@db/schema";
 
 interface TimeSlots {
@@ -69,6 +71,7 @@ export default function VetConnectPage() {
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isVideoCallActive, setIsVideoCallActive] = useState(false);
   const [activeAppointmentId, setActiveAppointmentId] = useState<string>("");
+  const [showVideoCall, setShowVideoCall] = useState(false);
   const [appointmentType, setAppointmentType] = useState<"consultation" | "checkup" | "emergency">("consultation");
 
   // Fetch veterinarians
@@ -134,14 +137,12 @@ export default function VetConnectPage() {
   });
 
   const filteredVets = veterinarians?.filter((vet) => {
-    const matchesSearch = 
+    const matchesSearch =
       vet.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vet.clinicAddress.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialization = 
-      !specialization || 
-      specialization === "all" || 
-      vet.specializations.includes(specialization);
-    
+    const matchesSpecialization =
+      !specialization || specialization === "all" || vet.specializations.includes(specialization);
+
     return matchesSearch && matchesSpecialization;
   });
 
@@ -225,20 +226,20 @@ export default function VetConnectPage() {
         </TabsList>
 
         <TabsContent value="find-vet">
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative md:w-1/3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 w-full"
               />
             </div>
-            <div className="relative md:w-1/3">
+            <div className="relative col-span-1">
               <Filter className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Select value={specialization} onValueChange={setSpecialization}>
-                <SelectTrigger className="pl-9">
+                <SelectTrigger className="pl-9 w-full">
                   <SelectValue placeholder="Filter by specialization" />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,7 +305,7 @@ export default function VetConnectPage() {
                         <Award className="w-4 h-4" />
                         <span className="text-xs">{vet.qualifications.join(", ")}</span>
                       </div>
-                      
+
                       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
                         <DialogTrigger asChild>
                           <Button
@@ -317,18 +318,18 @@ export default function VetConnectPage() {
                             Book Appointment
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-md">
+                        <DialogContent className="max-w-[95vw] w-full sm:max-w-md mx-auto">
                           <DialogHeader>
                             <DialogTitle>Book Appointment with {vet.user.name}</DialogTitle>
+                            <DialogDescription>
+                              Schedule a consultation with Dr. {vet.user.name}. Choose your preferred date, time, and consultation type.
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-6 py-4">
                             {/* Pet Selection */}
                             <div className="space-y-2">
                               <Label>Select Pet</Label>
-                              <Select 
-                                value={selectedPetId} 
-                                onValueChange={setSelectedPetId}
-                              >
+                              <Select value={selectedPetId} onValueChange={setSelectedPetId}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Choose a pet" />
                                 </SelectTrigger>
@@ -351,9 +352,9 @@ export default function VetConnectPage() {
                             {/* Appointment Type */}
                             <div className="space-y-2">
                               <Label>Appointment Type</Label>
-                              <Select 
-                                value={appointmentType} 
-                                onValueChange={(value: "consultation" | "checkup" | "emergency") => 
+                              <Select
+                                value={appointmentType}
+                                onValueChange={(value: "consultation" | "checkup" | "emergency") =>
                                   setAppointmentType(value)
                                 }
                               >
@@ -401,9 +402,17 @@ export default function VetConnectPage() {
 
                             {/* Video Consultation Option */}
                             {appointmentType === "consultation" && (
-                              <div className="flex items-center gap-2">
-                                <Video className="w-4 h-4" />
-                                <span className="text-sm">Video consultation available</span>
+                              <div className="space-y-4 p-4 bg-muted rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <Video className="w-4 h-4" />
+                                  <span className="text-sm font-medium">Video Consultations</span>
+                                </div>
+                                <Alert>
+                                  <AlertTitle>Coming Soon!</AlertTitle>
+                                  <AlertDescription>
+                                    Video consultation feature is currently under development. You will soon be able to connect with veterinarians remotely.
+                                  </AlertDescription>
+                                </Alert>
                               </div>
                             )}
 
