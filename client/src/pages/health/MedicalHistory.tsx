@@ -26,13 +26,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Share2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Define form schema
+// Define form schema with enhanced validation
 const formSchema = z.object({
-  petId: z.number(),
-  type: z.enum(["condition", "medication", "allergy", "surgery", "test_result"]),
-  description: z.string().min(1, "Description is required"),
-  date: z.date(),
+  petId: z.number({
+    required_error: "Please select a pet",
+    invalid_type_error: "Please select a valid pet",
+  }),
+  type: z.enum(["condition", "medication", "allergy", "surgery", "test_result"], {
+    required_error: "Please select a record type",
+  }),
+  description: z.string()
+    .min(1, "Description is required")
+    .max(1000, "Description must be less than 1000 characters"),
+  date: z.date({
+    required_error: "Please select a date",
+    invalid_type_error: "Please enter a valid date",
+  }),
   attachments: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+  severity: z.enum(["low", "medium", "high"], {
+    required_error: "Please select severity level",
+  }).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -106,16 +120,41 @@ export default function MedicalHistoryPage() {
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    if (!selectedPet) {
+  const onSubmit = async (data: FormData) => {
+    try {
+      if (!selectedPet) {
+        toast({
+          title: "Error",
+          description: "Please select a pet",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show loading state
+      toast({
+        title: "Adding record",
+        description: "Please wait while we save your medical record...",
+      });
+
+      await addHealthRecordMutation.mutateAsync({ ...data, petId: selectedPet });
+      
+      // Reset form and show success message
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Medical record added successfully",
+      });
+      
+      // Refresh the records list
+      await refetchRecords();
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Please select a pet",
+        description: error instanceof Error ? error.message : "Failed to add medical record",
         variant: "destructive",
       });
-      return;
     }
-    addHealthRecordMutation.mutate({ ...data, petId: selectedPet });
   };
 
   const handleShare = async (record: any) => {
