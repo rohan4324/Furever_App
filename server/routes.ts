@@ -532,29 +532,27 @@ export function registerRoutes(app: Express) {
     });
 
     const { category, sortBy, petType } = filterSchema.parse(req.query);
-    const baseQuery = db.select().from(products);
-    
-    let query = baseQuery;
+    let query = db.select().from(products);
     
     if (category) {
-      query = baseQuery.where(eq(products.category, category));
+      query = query.where(eq(products.category, category));
     }
     
     if (petType && petType !== "all") {
-      query = baseQuery.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
+      query = query.where(sql`${products.petType} @> ARRAY[${petType}]::text[]`);
     }
 
     // Apply sorting
     if (sortBy) {
       switch(sortBy) {
         case "price_asc":
-          query = baseQuery.orderBy(asc(products.price));
+          query = query.orderBy(asc(products.price));
           break;
         case "price_desc":
-          query = baseQuery.orderBy(desc(products.price));
+          query = query.orderBy(desc(products.price));
           break;
         case "rating":
-          query = baseQuery.orderBy(desc(products.rating));
+          query = query.orderBy(desc(products.rating));
           break;
       }
     }
@@ -850,8 +848,8 @@ export function registerRoutes(app: Express) {
           clinicPhone: veterinarians.clinicPhone,
           user: {
             id: users.id,
-            name: users.name,
-            email: users.email
+            name: sql<string>`${users.name}::text`,
+            email: sql<string>`${users.email}::text`
           }
         }
       })
@@ -896,6 +894,13 @@ app.post("/api/appointments", asyncHandler(async (req, res) => {
       dateTime: z.string().transform(str => new Date(str)),
       type: z.enum(["checkup", "vaccination", "emergency", "grooming", "consultation"]),
       notes: z.string().optional(),
+      questionnaire: z.object({
+        symptoms: z.array(z.string()).optional(),
+        duration: z.string().optional(),
+        severity: z.enum(["mild", "moderate", "severe"]).optional(),
+        previousTreatment: z.boolean().optional(),
+        medications: z.array(z.string()).optional()
+      }).optional()
     });
 
     const validatedData = appointmentSchema.parse(req.body);
