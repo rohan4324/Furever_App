@@ -6,6 +6,64 @@ import {
   veterinarians, vaccinations, vetAppointments, 
   healthRecords 
 } from "@db/schema";
+
+// Error Types
+class AppError extends Error {
+  constructor(
+    public statusCode: number,
+    public type: string,
+    message: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+// Error Handler Middleware
+const errorHandler = (
+  error: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.error('Error:', {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    path: req.path,
+    method: req.method,
+  });
+
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
+      type: error.type,
+      message: error.message,
+      details: error.details,
+    });
+  }
+
+  if (error instanceof z.ZodError) {
+    return res.status(400).json({
+      type: 'ValidationError',
+      message: 'Invalid request data',
+      details: error.errors,
+    });
+  }
+
+  // Default error response
+  return res.status(500).json({
+    type: 'InternalServerError',
+    message: 'An unexpected error occurred',
+  });
+};
+
+// Async handler wrapper
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -65,6 +123,8 @@ passport.deserializeUser(async (id: number, done) => {
 });
 
 export function registerRoutes(app: Express) {
+  // Register error handler
+  app.use(errorHandler);
   // Breeder routes
   app.get("/api/breeders", async (req, res) => {
     try {
@@ -569,32 +629,32 @@ export function registerRoutes(app: Express) {
   });
 
   // Health Services Routes
-  app.get("/api/veterinarians", async (req, res) => {
-    try {
-      const results = await db
-        .select({
-          id: veterinarians.id,
-          userId: veterinarians.userId,
-          specializations: veterinarians.specializations,
-          qualifications: veterinarians.qualifications,
-          clinicAddress: veterinarians.clinicAddress,
-          clinicPhone: veterinarians.clinicPhone,
-          availableSlots: veterinarians.availableSlots,
-          rating: veterinarians.rating,
-          user: {
-            id: users.id,
-            name: users.name,
-            email: users.email
-          }
-        })
-        .from(veterinarians)
-        .leftJoin(users, eq(veterinarians.userId, users.id));
-      res.json(results);
-    } catch (error) {
-      console.error('Error fetching veterinarians:', error);
-      res.status(500).json({ error: "Failed to fetch veterinarians" });
+  app.get("/api/veterinarians", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: veterinarians.id,
+        userId: veterinarians.userId,
+        specializations: veterinarians.specializations,
+        qualifications: veterinarians.qualifications,
+        clinicAddress: veterinarians.clinicAddress,
+        clinicPhone: veterinarians.clinicPhone,
+        availableSlots: veterinarians.availableSlots,
+        rating: veterinarians.rating,
+        user: {
+          id: users.id,
+          name: users.name.toString(),
+          email: users.email.toString()
+        }
+      })
+      .from(veterinarians)
+      .leftJoin(users, eq(veterinarians.userId, users.id));
+      
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No veterinarians found');
     }
-  });
+    
+    res.json(results);
+  }));
 
   app.post("/api/veterinarians", async (req, res) => {
     if (!req.session.userId) {
