@@ -186,6 +186,9 @@ export const healthRecords = pgTable("health_records", {
   type: text("type", { enum: ["condition", "medication", "allergy", "surgery", "test_result"] }).notNull(),
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
+  severity: text("severity", { enum: ["low", "medium", "high"] }),
+  attachments: text("attachments").array(),
+  notes: text("notes"),
   veterinarianId: integer("veterinarian_id").references(() => veterinarians.id),
   documentUrl: text("document_url"),
   createdAt: timestamp("created_at").defaultNow().notNull()
