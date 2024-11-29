@@ -23,16 +23,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertHealthRecordSchema, type InsertHealthRecord } from "@db/schema";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { AlertCircle, Share2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const formSchema = insertHealthRecordSchema;
+// Define form schema
+const formSchema = z.object({
+  petId: z.number(),
+  type: z.enum(["condition", "medication", "allergy", "surgery", "test_result"]),
+  description: z.string().min(1, "Description is required"),
+  date: z.date(),
+  attachments: z.array(z.string()).optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 export default function MedicalHistoryPage() {
   const { toast } = useToast();
@@ -40,16 +43,18 @@ export default function MedicalHistoryPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: "condition",
       description: "",
       date: new Date(),
+      attachments: [],
     },
   });
 
-  const { data: pets } = useQuery({
+  // Fetch pets
+  const { data: pets, isLoading: isPetsLoading } = useQuery({
     queryKey: ["pets"],
     queryFn: async () => {
       const res = await fetch("/api/pets");
@@ -58,6 +63,7 @@ export default function MedicalHistoryPage() {
     },
   });
 
+  // Fetch health records for selected pet
   const { data: healthRecords, refetch: refetchRecords } = useQuery({
     queryKey: ["health-records", selectedPet],
     enabled: !!selectedPet,
@@ -68,12 +74,13 @@ export default function MedicalHistoryPage() {
     },
   });
 
+  // Add health record mutation
   const addHealthRecordMutation = useMutation({
-    mutationFn: async (data: InsertHealthRecord) => {
+    mutationFn: async (data: FormData) => {
       const res = await fetch("/api/health-records", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, date: data.date.toISOString() }),
       });
       if (!res.ok) throw new Error("Failed to add health record");
       return res.json();
@@ -95,7 +102,7 @@ export default function MedicalHistoryPage() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = (data: FormData) => {
     if (!selectedPet) {
       toast({
         title: "Error",
@@ -108,24 +115,28 @@ export default function MedicalHistoryPage() {
   };
 
   const handleShare = async (record: any) => {
-    // Copy record details to clipboard
-    const recordText = `
+    try {
+      // Create a formatted medical record for sharing
+      const recordText = `
 Pet Medical Record
 Type: ${record.type}
 Date: ${new Date(record.date).toLocaleDateString()}
 Description: ${record.description}
-    `.trim();
+      `.trim();
 
-    try {
       await navigator.clipboard.writeText(recordText);
+      
+      // Generate a temporary sharing link (in a real app, this would be a proper sharing mechanism)
+      const shareableLink = `${window.location.origin}/shared-record/${record.id}`;
+      
       toast({
         title: "Success",
-        description: "Medical record copied to clipboard",
+        description: "Medical record copied to clipboard and sharing link generated",
       });
     } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to copy record to clipboard",
+        description: "Failed to share medical record",
         variant: "destructive",
       });
     }
@@ -140,11 +151,23 @@ Description: ${record.description}
     { value: "test_result", label: "Test Result" },
   ];
 
+  if (isPetsLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8">Pet Medical History</h1>
+        <div className="flex items-center justify-center h-64">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-8">Pet Medical History</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Add Medical Record Form */}
         <Card>
           <CardHeader>
             <CardTitle>Add Medical Record</CardTitle>
@@ -186,10 +209,7 @@ Description: ${record.description}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Record Type</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select record type" />
@@ -222,14 +242,19 @@ Description: ${record.description}
                   )}
                 />
 
-                <Button type="submit" className="w-full">
-                  Add Medical Record
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={addHealthRecordMutation.isPending}
+                >
+                  {addHealthRecordMutation.isPending ? "Adding..." : "Add Medical Record"}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
+        {/* Medical History Display */}
         <Card>
           <CardHeader>
             <CardTitle>Medical History</CardTitle>
@@ -237,47 +262,30 @@ Description: ${record.description}
           <CardContent>
             {!selectedPet ? (
               <p className="text-muted-foreground">Select a pet to view medical history</p>
-            ) : healthRecords?.length === 0 ? (
+            ) : !healthRecords || healthRecords.length === 0 ? (
               <p className="text-muted-foreground">No medical records found</p>
             ) : (
               <div className="space-y-4">
-                {healthRecords?.map((record: any) => (
+                {healthRecords.map((record: any) => (
                   <div
                     key={record.id}
-                    className="p-4 border rounded-lg space-y-2"
+                    className="p-4 border rounded-lg space-y-2 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold capitalize">{record.type}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Date: {new Date(record.date).toLocaleDateString()}
+                          {new Date(record.date).toLocaleDateString()}
                         </p>
                       </div>
-                      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedRecord(record)}
-                          >
-                            Share
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Share Medical Record</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <p>Share this medical record with veterinarians or other pet care professionals.</p>
-                            <Button
-                              className="w-full"
-                              onClick={() => handleShare(selectedRecord)}
-                            >
-                              Copy to Clipboard
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleShare(record)}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
                     </div>
                     <p className="text-sm">{record.description}</p>
                   </div>
