@@ -180,6 +180,97 @@ export function registerRoutes(app: Express) {
     res.json(results);
   }));
 
+  // Products routes with filtering and sorting
+  app.get("/api/products", asyncHandler(async (req, res) => {
+    const { category, sortBy, petType } = req.query;
+      
+    let query = db.select({
+      id: products.id,
+      name: sql<string>`${products.name}::text`,
+      description: sql<string>`${products.description}::text`,
+      price: products.price,
+      category: products.category,
+      subCategory: products.subCategory,
+      images: products.images,
+      brand: sql<string>`${products.brand}::text`,
+      stock: products.stock,
+      rating: products.rating,
+      petType: products.petType,
+      createdAt: products.createdAt
+    }).from(products);
+
+    if (category) {
+      query = query.where(eq(products.category, category as string));
+    }
+
+    if (petType && petType !== "all") {
+      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+    }
+
+    if (sortBy === "price_asc") {
+      query = query.orderBy(asc(products.price));
+    } else if (sortBy === "price_desc") {
+      query = query.orderBy(desc(products.price));
+    } else if (sortBy === "rating") {
+      query = query.orderBy(desc(products.rating));
+    }
+
+    const results = await query;
+    res.json(results);
+  }));
+
+  // Shelters routes with pet associations
+  app.get("/api/shelters", asyncHandler(async (req, res) => {
+    const shelterResults = await db
+      .select({
+        id: shelters.id,
+        userId: shelters.userId,
+        description: sql<string>`${shelters.description}::text`,
+        address: sql<string>`${shelters.address}::text`,
+        phone: sql<string>`${shelters.phone}::text`,
+        website: shelters.website,
+        verificationStatus: shelters.verificationStatus,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        }
+      })
+      .from(shelters)
+      .leftJoin(users, eq(shelters.userId, users.id));
+
+    // Fetch pets for each shelter
+    const shelterIds = shelterResults.map(shelter => shelter.userId);
+    const petsResults = await db
+      .select({
+        id: pets.id,
+        name: sql<string>`${pets.name}::text`,
+        type: pets.type,
+        breed: sql<string>`${pets.breed}::text`,
+        age: pets.age,
+        gender: pets.gender,
+        size: pets.size,
+        description: sql<string>`${pets.description}::text`,
+        images: pets.images,
+        status: pets.status,
+        shelterId: pets.shelterId
+      })
+      .from(pets)
+      .where(inArray(pets.shelterId, shelterIds));
+
+    // Combine results
+    const sheltersWithPets = shelterResults.map(shelter => ({
+      ...shelter,
+      pets: petsResults.filter(pet => pet.shelterId === shelter.userId)
+    }));
+
+    if (!sheltersWithPets.length) {
+      throw new AppError(404, 'NotFound', 'No shelters found');
+    }
+
+    res.json(sheltersWithPets);
+  }));
+
   // Add other routes as necessary...
 
 }
