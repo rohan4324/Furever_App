@@ -184,7 +184,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
       
-    let query = db.select({
+    let baseQuery = db.select({
       id: products.id,
       name: sql<string>`${products.name}::text`,
       description: sql<string>`${products.description}::text`,
@@ -200,22 +200,52 @@ export function registerRoutes(app: Express) {
     }).from(products);
 
     if (category) {
-      query = query.where(eq(products.category, category as string));
+      baseQuery = baseQuery.where(eq(products.category, category as string));
     }
 
     if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      baseQuery = baseQuery.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
+    let query = baseQuery;
+    
     if (sortBy === "price_asc") {
-      query = query.orderBy(asc(products.price));
+      query = baseQuery.orderBy(asc(products.price));
     } else if (sortBy === "price_desc") {
-      query = query.orderBy(desc(products.price));
+      query = baseQuery.orderBy(desc(products.price));
     } else if (sortBy === "rating") {
-      query = query.orderBy(desc(products.rating));
+      query = baseQuery.orderBy(desc(products.rating));
     }
 
     const results = await query;
+    res.json(results);
+  }));
+
+  // Veterinarians endpoint
+  app.get("/api/veterinarians", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: veterinarians.id,
+        userId: veterinarians.userId,
+        specializations: veterinarians.specializations,
+        qualifications: veterinarians.qualifications,
+        clinicAddress: sql<string>`${veterinarians.clinicAddress}::text`,
+        clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
+        availableSlots: veterinarians.availableSlots,
+        rating: veterinarians.rating,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        }
+      })
+      .from(veterinarians)
+      .leftJoin(users, eq(veterinarians.userId, users.id));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No veterinarians found');
+    }
+
     res.json(results);
   }));
 
