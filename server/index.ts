@@ -58,25 +58,35 @@ if (process.env.NODE_ENV !== 'production') {
 const app = express();
 
 // Security middlewares
+// Configure Helmet with development-specific settings
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        process.env.NODE_ENV !== 'production' && "'unsafe-eval'"
+      ].filter(Boolean),
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.openweathermap.org"]
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: [
+        "'self'",
+        "https://api.openweathermap.org",
+        process.env.NODE_ENV !== 'production' && "ws://localhost:5000",
+        process.env.NODE_ENV !== 'production' && "wss://localhost:5000"
+      ].filter(Boolean)
     }
   },
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
+// CORS configuration with development settings
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://your-domain.com' 
-    : 'http://localhost:5000',
-  credentials: true
+  origin: true, // Allow all origins in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-xsrf-token']
 }));
 
 // Rate limiting
