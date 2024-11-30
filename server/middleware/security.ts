@@ -87,9 +87,8 @@ export const productionRateLimiter = rateLimit({
       retryAfter: Math.ceil(15 * 60) // 15 minutes in seconds
     });
   },
-  keyGenerator: (req) => {
-    // Use X-Forwarded-For if available, otherwise use IP
-    return req.headers['x-forwarded-for']?.toString() || req.ip;
+  keyGenerator: (req: Request): string => {
+    return (req.headers['x-forwarded-for']?.toString() || req.ip || 'unknown-ip');
   },
   skipFailedRequests: false,
   skipSuccessfulRequests: false,
