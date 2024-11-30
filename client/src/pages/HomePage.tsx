@@ -2,11 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 
+import { Footer } from "@/components/Footer";
+
 export default function HomePage() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="space-y-12">
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-grow space-y-12">
       {/* Hero Section */}
       <section className="relative h-[500px] rounded-lg overflow-hidden">
         <img
@@ -84,6 +87,8 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </section>
+      </div>
+      <Footer />
     </div>
   );
 }
