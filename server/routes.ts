@@ -184,7 +184,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
       
-    let baseQuery = db.select({
+    const baseQuery = db.select({
       id: products.id,
       name: sql<string>`${products.name}::text`,
       description: sql<string>`${products.description}::text`,
@@ -199,25 +199,32 @@ export function registerRoutes(app: Express) {
       createdAt: products.createdAt
     }).from(products);
 
+    let finalQuery = baseQuery;
+
     if (category) {
-      baseQuery = baseQuery.where(eq(products.category, category as string));
+      finalQuery = finalQuery.where(eq(products.category, category as string));
     }
 
     if (petType && petType !== "all") {
-      baseQuery = baseQuery.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      finalQuery = finalQuery.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
-    let query = baseQuery;
-    
-    if (sortBy === "price_asc") {
-      query = baseQuery.orderBy(asc(products.price));
-    } else if (sortBy === "price_desc") {
-      query = baseQuery.orderBy(desc(products.price));
-    } else if (sortBy === "rating") {
-      query = baseQuery.orderBy(desc(products.rating));
+    // Apply sorting
+    switch(sortBy) {
+      case "price_asc":
+        finalQuery = finalQuery.orderBy(asc(products.price));
+        break;
+      case "price_desc":
+        finalQuery = finalQuery.orderBy(desc(products.price));
+        break;
+      case "rating":
+        finalQuery = finalQuery.orderBy(desc(products.rating));
+        break;
+      default:
+        finalQuery = finalQuery.orderBy(desc(products.createdAt));
     }
 
-    const results = await query;
+    const results = await finalQuery;
     res.json(results);
   }));
 
