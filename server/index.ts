@@ -5,6 +5,12 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import helmet from "helmet";
+import cors from "cors";
+import csrf from "csrf";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
+import winston from "winston";
 
 // Extend Express Request type to include session
 declare module "express-session" {
@@ -30,14 +36,72 @@ function log(message: string) {
   console.log(`${formattedTime} [express] ${message}`);
 }
 
+// Initialize Winston logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.simple()
+  }));
+}
+
 const app = express();
-app.use(express.json());
+
+// Security middlewares
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.openweathermap.org"]
+    }
+  },
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || 'https://your-domain.com' 
+    : 'http://localhost:5000',
+  credentials: true
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api/', limiter);
+
+// Enable gzip compression
+app.use(compression());
+
+// Body parsers
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 
 // Configure session middleware
 const MemoryStoreSession = MemoryStore(session);
+// CSRF Protection
+const tokens = new csrf();
+const secret = tokens.secretSync();
+
 app.use(session({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: new MemoryStoreSession({
@@ -46,9 +110,32 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   }
 }));
+
+// CSRF middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Skip CSRF for non-mutating methods
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const token = tokens.create(secret);
+  res.cookie('XSRF-TOKEN', token, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+  });
+
+  const userToken = req.headers['x-xsrf-token'] as string;
+  if (!userToken || !tokens.verify(secret, userToken)) {
+    return res.status(403).json({ error: 'CSRF token validation failed' });
+  }
+
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
