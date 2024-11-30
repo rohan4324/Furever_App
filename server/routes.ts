@@ -183,7 +183,9 @@ export function registerRoutes(app: Express) {
   // Products routes with filtering and sorting
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
-      
+    
+    type ProductCategory = 'food' | 'accessories' | 'grooming' | 'training' | 'safety';
+    
     const query = db
       .select({
         id: products.id,
@@ -202,8 +204,8 @@ export function registerRoutes(app: Express) {
       .from(products);
 
     // Add where clauses
-    if (category) {
-      query.where(eq(products.category, category as string));
+    if (category && ['food', 'accessories', 'grooming', 'training', 'safety'].includes(category as string)) {
+      query.where(eq(products.category, category as ProductCategory));
     }
 
     if (petType && petType !== "all") {
