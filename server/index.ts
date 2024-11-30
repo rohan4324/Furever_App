@@ -5,6 +5,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { configureSecurityMiddleware, logger } from "./middleware/security";
+import path from "path";
 
 // Extend Express Request type to include session
 declare module "express-session" {
@@ -31,13 +33,18 @@ function log(message: string) {
 }
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Configure security middleware
+configureSecurityMiddleware(app);
+
+// Body parsing middleware with size limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Configure session middleware
 const MemoryStoreSession = MemoryStore(session);
 app.use(session({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   store: new MemoryStoreSession({
@@ -46,8 +53,10 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'strict'
+  },
+  name: 'sessionId', // Change default cookie name
 }));
 
 app.use((req, res, next) => {
