@@ -6,6 +6,12 @@ import {
   veterinarians, vaccinations, vetAppointments, 
   healthRecords 
 } from "@db/schema";
+import { eq, and, sql, asc, desc, inArray } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 // Error Types
 class AppError extends Error {
@@ -57,13 +63,6 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
   };
 };
 
-import { eq, and, sql, asc, desc } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -79,9 +78,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// Update image paths in migrations
-const imageBaseUrl = "/images/products/";
-
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
@@ -96,28 +92,107 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB
   },
 });
-import passport from "passport";
-import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
-
-// Passport configuration
-passport.serializeUser((user: any, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id: number, done) => {
-  try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, id),
-    });
-    done(null, user);
-  } catch (err) {
-    done(err, null);
-  }
-});
 
 export function registerRoutes(app: Express) {
   // Register error handler
   app.use(errorHandler);
+
+  // Shelters endpoint with proper type handling
+  app.get("/api/shelters", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: shelters.id,
+        userId: shelters.userId,
+        description: sql<string>`${shelters.description}::text`,
+        address: sql<string>`${shelters.address}::text`,
+        phone: sql<string>`${shelters.phone}::text`,
+        website: shelters.website,
+        verificationStatus: shelters.verificationStatus,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        }
+      })
+      .from(shelters)
+      .leftJoin(users, eq(shelters.userId, users.id));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No shelters found');
+    }
+
+    // Fetch pets separately to avoid type issues
+    const shelterIds = results.map(shelter => shelter.userId);
+    const petsResults = await db
+      .select({
+        shelterId: pets.shelterId,
+        id: pets.id,
+        name: sql<string>`${pets.name}::text`,
+        type: pets.type,
+        breed: sql<string>`${pets.breed}::text`,
+        status: pets.status,
+        images: pets.images
+      })
+      .from(pets)
+      .where(inArray(pets.shelterId, shelterIds));
+
+    // Combine results
+    const sheltersWithPets = results.map(shelter => ({
+      ...shelter,
+      pets: petsResults.filter(pet => pet.shelterId === shelter.userId)
+    }));
+
+    res.json(sheltersWithPets);
+  }));
+
+  // Products endpoint with proper type handling
+  app.get("/api/products", asyncHandler(async (req, res) => {
+    const { category, sortBy, petType } = req.query;
+
+    let query = db
+      .select({
+        id: products.id,
+        name: sql<string>`${products.name}::text`,
+        description: sql<string>`${products.description}::text`,
+        price: sql<string>`${products.price}::decimal`,
+        category: products.category,
+        subCategory: products.subCategory,
+        images: products.images,
+        brand: sql<string>`${products.brand}::text`,
+        stock: products.stock,
+        rating: sql<string>`${products.rating}::decimal`,
+        petType: products.petType,
+        createdAt: products.createdAt
+      })
+      .from(products);
+    
+    if (category) {
+      query = query.where(eq(products.category, category as string));
+    }
+    
+    if (petType && petType !== "all") {
+      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+    }
+
+    // Apply sorting with proper type handling
+    if (sortBy) {
+      if (sortBy === "price_asc") {
+        query = query.orderBy(asc(products.price));
+      } else if (sortBy === "price_desc") {
+        query = query.orderBy(desc(products.price));
+      } else if (sortBy === "rating") {
+        query = query.orderBy(desc(sql<string>`COALESCE(${products.rating}, 0)`));
+      }
+    }
+
+    const results = await query;
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No products found');
+    }
+
+    res.json(results);
+  }));
 
   // Breeder routes
   app.get("/api/breeders", asyncHandler(async (req, res) => {
@@ -147,7 +222,6 @@ export function registerRoutes(app: Express) {
     res.json(results);
   }));
 
-  // Other routes...
   // Get veterinarians list
   app.get("/api/veterinarians", asyncHandler(async (req, res) => {
     const results = await db
@@ -249,42 +323,6 @@ export function registerRoutes(app: Express) {
     res.json(result[0]);
   }));
   // Products routes with proper type handling
-  app.get("/api/shelters", asyncHandler(async (req, res) => {
-    const results = await db
-      .select({
-        id: shelters.id,
-        userId: shelters.userId,
-        description: sql<string>`${shelters.description}::text`,
-        address: sql<string>`${shelters.address}::text`,
-        phone: sql<string>`${shelters.phone}::text`,
-        website: shelters.website,
-        verificationStatus: shelters.verificationStatus,
-        user: {
-          id: users.id,
-          name: sql<string>`${users.name}::text`,
-          email: sql<string>`${users.email}::text`
-        },
-        pets: db.select({
-          id: pets.id,
-          name: sql<string>`${pets.name}::text`,
-          type: pets.type,
-          breed: sql<string>`${pets.breed}::text`,
-          status: pets.status,
-          images: pets.images
-        })
-        .from(pets)
-        .where(eq(pets.shelterId, shelters.userId))
-      })
-      .from(shelters)
-      .leftJoin(users, eq(shelters.userId, users.id));
-
-    if (!results.length) {
-      throw new AppError(404, 'NotFound', 'No shelters found');
-    }
-
-    res.json(results);
-  }));
-
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
 
@@ -293,13 +331,13 @@ export function registerRoutes(app: Express) {
         id: products.id,
         name: sql<string>`${products.name}::text`,
         description: sql<string>`${products.description}::text`,
-        price: products.price,
+        price: sql<string>`${products.price}::decimal`,
         category: products.category,
         subCategory: products.subCategory,
         images: products.images,
         brand: sql<string>`${products.brand}::text`,
         stock: products.stock,
-        rating: products.rating,
+        rating: sql<string>`${products.rating}::decimal`,
         petType: products.petType,
         createdAt: products.createdAt
       })
@@ -314,14 +352,13 @@ export function registerRoutes(app: Express) {
     }
 
     // Apply sorting with proper type handling
-    const baseQuery = query;
     if (sortBy) {
       if (sortBy === "price_asc") {
-        query = baseQuery.orderBy(asc(products.price));
+        query = query.orderBy(asc(products.price));
       } else if (sortBy === "price_desc") {
-        query = baseQuery.orderBy(desc(products.price));
+        query = query.orderBy(desc(products.price));
       } else if (sortBy === "rating") {
-        query = baseQuery.orderBy(desc(products.rating));
+        query = query.orderBy(desc(sql<string>`COALESCE(${products.rating}, 0)`));
       }
     }
 
@@ -439,6 +476,4 @@ export function registerRoutes(app: Express) {
 
     res.status(201).json(result);
   }));
-
-  // Rest of the routes...
 }
