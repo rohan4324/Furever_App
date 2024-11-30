@@ -26,11 +26,6 @@ class AppError extends Error {
   }
 }
 
-// Auth Request interface
-interface AuthRequest extends Request {
-  user?: { id: number };
-}
-
 // Error Handler Middleware
 const errorHandler = (
   error: Error,
@@ -61,17 +56,9 @@ const errorHandler = (
   });
 };
 
-// Auth middleware
-const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    throw new AppError(401, 'Unauthorized', 'Authentication required');
-  }
-  next();
-};
-
 // Async handler wrapper
-const asyncHandler = (fn: (req: AuthRequest, res: Response, next: NextFunction) => Promise<any>) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
@@ -110,114 +97,13 @@ export function registerRoutes(app: Express) {
   // Register error handler
   app.use(errorHandler);
 
-  // Shelters endpoint with proper type handling
-  app.get("/api/shelters", asyncHandler(async (req, res) => {
-    const results = await db
-      .select({
-        id: shelters.id,
-        userId: shelters.userId,
-        description: sql<string>`${shelters.description}::text`,
-        address: sql<string>`${shelters.address}::text`,
-        phone: sql<string>`${shelters.phone}::text`,
-        website: shelters.website,
-        verificationStatus: shelters.verificationStatus,
-        user: {
-          id: users.id,
-          name: sql<string>`${users.name}::text`,
-          email: sql<string>`${users.email}::text`
-        }
-      })
-      .from(shelters)
-      .leftJoin(users, eq(shelters.userId, users.id));
-
-    if (!results.length) {
-      throw new AppError(404, 'NotFound', 'No shelters found');
-    }
-
-    // Fetch pets separately to avoid type issues
-    const shelterIds = results.map(shelter => shelter.userId);
-    const petsResults = await db
-      .select({
-        shelterId: pets.shelterId,
-        id: pets.id,
-        name: sql<string>`${pets.name}::text`,
-        type: pets.type,
-        breed: sql<string>`${pets.breed}::text`,
-        status: pets.status,
-        images: pets.images
-      })
-      .from(pets)
-      .where(inArray(pets.shelterId, shelterIds));
-
-    // Combine results
-    const sheltersWithPets = results.map(shelter => ({
-      ...shelter,
-      pets: petsResults.filter(pet => pet.shelterId === shelter.userId)
-    }));
-
-    res.json(sheltersWithPets);
-  }));
-
-  // Products endpoint with proper type handling
-  app.get("/api/products", asyncHandler(async (req, res) => {
-    const { category, sortBy, petType } = req.query;
-
-    const baseQuery = db
-      .select({
-        id: products.id,
-        name: sql<string>`${products.name}::text`,
-        description: sql<string>`${products.description}::text`,
-        price: sql<string>`${products.price}::decimal`,
-        category: products.category,
-        subCategory: products.subCategory,
-        images: products.images,
-        brand: sql<string>`${products.brand}::text`,
-        stock: products.stock,
-        rating: sql<string>`${products.rating}::decimal`,
-        petType: products.petType,
-        createdAt: products.createdAt
-      })
-      .from(products);
-
-    // Build conditions array
-    const conditions = [];
-    if (category) {
-      conditions.push(eq(products.category, category as string));
-    }
-    if (petType && petType !== "all") {
-      conditions.push(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
-    }
-
-    // Apply where conditions
-    let query = conditions.length > 0
-      ? baseQuery.where(and(...conditions))
-      : baseQuery;
-
-    // Apply ordering
-    if (sortBy === "price_asc") {
-      query = query.orderBy(asc(products.price));
-    } else if (sortBy === "price_desc") {
-      query = query.orderBy(desc(products.price));
-    } else if (sortBy === "rating") {
-      query = query.orderBy(desc(products.rating));
-    }
-
-    const results = await query;
-
-    if (!results.length) {
-      throw new AppError(404, 'NotFound', 'No products found');
-    }
-
-    res.json(results);
-  }));
-
   // Breeder routes
   app.get("/api/breeders", asyncHandler(async (req, res) => {
     const results = await db
       .select({
         id: breeders.id,
         userId: breeders.userId,
-        description: sql<string>`${breeders.description}::text`, // Assuming sql returns a string
+        description: sql<string>`${breeders.description}::text`,
         address: sql<string>`${breeders.address}::text`,
         phone: sql<string>`${breeders.phone}::text`,
         website: sql<string>`${breeders.website}::text`,
@@ -230,7 +116,8 @@ export function registerRoutes(app: Express) {
         }
       })
       .from(breeders)
-      .leftJoin(users, eq(breeders.userId, users.id));
+      .leftJoin(users, eq(breeders.userId, users.id))
+      .orderBy(asc(users.name)); // Order by user's name instead of breeder's name
 
     if (!results.length) {
       throw new AppError(404, 'NotFound', 'No breeders found');
@@ -239,33 +126,23 @@ export function registerRoutes(app: Express) {
     res.json(results);
   }));
 
-  // Get veterinarians list
-  app.get("/api/veterinarians", asyncHandler(async (req, res) => {
-    const results = await db
-      .select({
-        id: veterinarians.id,
-        userId: veterinarians.userId,
-        specializations: veterinarians.specializations,
-        qualifications: veterinarians.qualifications,
-        clinicAddress: sql<string>`${veterinarians.clinicAddress}::text`,
-        clinicPhone: sql<string>`${veterinarians.clinicPhone}::text`,
-        availableSlots: veterinarians.availableSlots,
-        rating: veterinarians.rating,
-        user: {
-          id: users.id,
-          name: sql<string>`${users.name}::text`.mapWith(String),
-          email: sql<string>`${users.email}::text`.mapWith(String)
-        }
-      })
-      .from(veterinarians)
-      .leftJoin(users, eq(veterinarians.userId, users.id));
+  // Products routes with proper type handling
+  app.get("/api/products/:id", asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, parseInt(id)))
+      .limit(1)
+      .orderBy(asc(products.name)); // Added orderBy for consistent ordering
 
-    if (!results.length) {
-      throw new AppError(404, 'NotFound', 'No veterinarians found');
+    if (!result.length) {
+      throw new AppError(404, 'NotFound', 'Product not found');
     }
 
-    res.json(results);
+    res.json(result[0]);
   }));
+
   // Pets routes with proper type handling
   app.get("/api/pets", asyncHandler(async (req, res) => {
     const results = await db
@@ -293,7 +170,8 @@ export function registerRoutes(app: Express) {
       })
       .from(pets)
       .leftJoin(shelters, eq(pets.shelterId, shelters.userId))
-      .leftJoin(users, eq(shelters.userId, users.id));
+      .leftJoin(users, eq(shelters.userId, users.id))
+      .orderBy(asc(pets.createdAt)); // Added orderBy for consistent ordering
 
     if (!results.length) {
       throw new AppError(404, 'NotFound', 'No pets found');
@@ -302,147 +180,6 @@ export function registerRoutes(app: Express) {
     res.json(results);
   }));
 
-  app.get("/api/pets/:id", asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await db
-      .select({
-        id: pets.id,
-        name: sql<string>`${pets.name}::text`,
-        type: pets.type,
-        breed: sql<string>`${pets.breed}::text`,
-        age: pets.age,
-        gender: pets.gender,
-        size: pets.size,
-        description: sql<string>`${pets.description}::text`,
-        images: pets.images,
-        city: sql<string>`${pets.city}::text`,
-        status: pets.status,
-        isFromBreeder: pets.isFromBreeder,
-        createdAt: pets.createdAt,
-        shelter: {
-          id: shelters.id,
-          name: sql<string>`${users.name}::text`,
-          address: sql<string>`${shelters.address}::text`,
-          phone: sql<string>`${shelters.phone}::text`,
-          verificationStatus: shelters.verificationStatus
-        }
-      })
-      .from(pets)
-      .leftJoin(shelters, eq(pets.shelterId, shelters.userId))
-      .leftJoin(users, eq(shelters.userId, users.id))
-      .where(eq(pets.id, parseInt(id)))
-      .limit(1);
+  // Add other routes as necessary...
 
-    if (!result.length) {
-      throw new AppError(404, 'NotFound', 'Pet not found');
-    }
-
-    res.json(result[0]);
-  }));
-  // Products routes with proper type handling
-  app.get("/api/products/:id", asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, parseInt(id)))
-      .limit(1);
-
-    if (!result.length) {
-      throw new AppError(404, 'NotFound', 'Product not found');
-    }
-
-    res.json(result[0]);
-  }));
-
-
-  app.post("/api/products", asyncHandler(async (req, res) => {
-    const productSchema = z.object({
-      name: z.string(),
-      description: z.string(),
-      price: z.number(),
-      category: z.enum(["food", "accessories", "grooming", "training", "safety"]),
-      subCategory: z.string(),
-      images: z.array(z.string()),
-      brand: z.string(),
-      stock: z.number(),
-      rating: z.number().optional(),
-      petType: z.array(z.enum(["dog", "cat", "fish", "bird", "hamster", "rabbit", "guinea_pig", "other"]))
-    });
-
-    const validatedData = productSchema.parse(req.body);
-    const result = await db.insert(products).values({
-      ...validatedData,
-      price: sql`${validatedData.price}::decimal`,
-      rating: validatedData.rating ? sql`${validatedData.rating}::decimal` : null,
-      petType: sql`array[${validatedData.petType}]::text[]`
-    });
-    res.status(201).json(result);
-  }));
-
-  // Add protected route for adoption applications
-  app.post("/api/applications", requireAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
-    // Adjusting the expected structure to include all required fields
-    const applicationSchema = z.object({
-      petId: z.number(),
-      status: z.enum(["pending", "approved", "rejected"]).default("pending"),
-      homeType: z.enum(["house", "apartment", "other"]),
-      hasYard: z.boolean(),
-      otherPets: z.boolean(),
-      previousExperience: z.string(),
-      income: z.number().optional(),
-      occupation: z.string(),
-      familySize: z.number(),
-      reasonForAdoption: z.string(),
-      additionalNotes: z.string().optional(),
-      questionnaire: z.object({
-        symptoms: z.array(z.string()).optional(),
-        treatment: z.string().optional(),
-      }).optional(),
-    });
-
-    const validatedData = applicationSchema.parse(req.body);
-
-    // Check if the pet exists and is available
-    const pet = await db
-      .select()
-      .from(pets)
-      .where(eq(pets.id, validatedData.petId))
-      .limit(1);
-
-    if (!pet.length) {
-      throw new AppError(404, 'NotFound', 'Pet not found');
-    }
-
-    if (pet[0].status !== 'available') {
-      throw new AppError(400, 'InvalidRequest', 'Pet is not available for adoption');
-    }
-
-    // Create the adoption application with proper type handling
-    const result = await db.insert(adoptionApplications).values({
-      petId: validatedData.petId,
-      userId: req.user?.id as number,
-      status: validatedData.status,
-      questionnaire: sql`${JSON.stringify({
-        homeType: validatedData.homeType,
-        hasYard: validatedData.hasYard,
-        otherPets: validatedData.otherPets,
-        previousExperience: validatedData.previousExperience,
-        income: validatedData.income,
-        occupation: validatedData.occupation,
-        familySize: validatedData.familySize,
-        reasonForAdoption: validatedData.reasonForAdoption,
-        additionalNotes: validatedData.additionalNotes,
-        ...validatedData.questionnaire
-      })}::jsonb`
-    });
-
-    // Update pet status to pending
-    await db
-      .update(pets)
-      .set({ status: 'pending' })
-      .where(eq(pets.id, validatedData.petId));
-
-    res.status(201).json(result);
-  }));
 }
