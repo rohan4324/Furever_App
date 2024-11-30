@@ -162,7 +162,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
 
-    let query = db
+    const baseQuery = db
       .select({
         id: products.id,
         name: sql<string>`${products.name}::text`,
@@ -178,15 +178,22 @@ export function registerRoutes(app: Express) {
         createdAt: products.createdAt
       })
       .from(products);
-    
+
+    // Build conditions array
+    const conditions = [];
     if (category) {
-      query = query.where(eq(products.category, category as string));
+      conditions.push(eq(products.category, category as string));
     }
-    
     if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      conditions.push(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
+    // Apply where conditions
+    let query = conditions.length > 0
+      ? baseQuery.where(and(...conditions))
+      : baseQuery;
+
+    // Apply ordering
     if (sortBy === "price_asc") {
       query = query.orderBy(asc(products.price));
     } else if (sortBy === "price_desc") {
