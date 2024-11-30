@@ -249,11 +249,60 @@ export function registerRoutes(app: Express) {
     res.json(result[0]);
   }));
   // Products routes with proper type handling
+  app.get("/api/shelters", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: shelters.id,
+        userId: shelters.userId,
+        description: sql<string>`${shelters.description}::text`,
+        address: sql<string>`${shelters.address}::text`,
+        phone: sql<string>`${shelters.phone}::text`,
+        website: shelters.website,
+        verificationStatus: shelters.verificationStatus,
+        user: {
+          id: users.id,
+          name: sql<string>`${users.name}::text`,
+          email: sql<string>`${users.email}::text`
+        },
+        pets: db.select({
+          id: pets.id,
+          name: sql<string>`${pets.name}::text`,
+          type: pets.type,
+          breed: sql<string>`${pets.breed}::text`,
+          status: pets.status,
+          images: pets.images
+        })
+        .from(pets)
+        .where(eq(pets.shelterId, shelters.userId))
+      })
+      .from(shelters)
+      .leftJoin(users, eq(shelters.userId, users.id));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No shelters found');
+    }
+
+    res.json(results);
+  }));
+
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
 
     let query = db
-      .select()
+      .select({
+        id: products.id,
+        name: sql<string>`${products.name}::text`,
+        description: sql<string>`${products.description}::text`,
+        price: products.price,
+        category: products.category,
+        subCategory: products.subCategory,
+        images: products.images,
+        brand: sql<string>`${products.brand}::text`,
+        stock: products.stock,
+        rating: products.rating,
+        petType: products.petType,
+        createdAt: products.createdAt
+      })
       .from(products);
     
     if (category) {
@@ -265,13 +314,14 @@ export function registerRoutes(app: Express) {
     }
 
     // Apply sorting with proper type handling
+    const baseQuery = query;
     if (sortBy) {
       if (sortBy === "price_asc") {
-        query = query.orderBy(asc(products.price));
+        query = baseQuery.orderBy(asc(products.price));
       } else if (sortBy === "price_desc") {
-        query = query.orderBy(desc(products.price));
+        query = baseQuery.orderBy(desc(products.price));
       } else if (sortBy === "rating") {
-        query = query.orderBy(desc(products.rating));
+        query = baseQuery.orderBy(desc(products.rating));
       }
     }
 
