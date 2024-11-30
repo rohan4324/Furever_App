@@ -175,6 +175,79 @@ export function registerRoutes(app: Express) {
 
     res.json(results);
   }));
+  // Pets routes with proper type handling
+  app.get("/api/pets", asyncHandler(async (req, res) => {
+    const results = await db
+      .select({
+        id: pets.id,
+        name: sql<string>`${pets.name}::text`,
+        type: pets.type,
+        breed: sql<string>`${pets.breed}::text`,
+        age: pets.age,
+        gender: pets.gender,
+        size: pets.size,
+        description: sql<string>`${pets.description}::text`,
+        images: pets.images,
+        city: sql<string>`${pets.city}::text`,
+        status: pets.status,
+        isFromBreeder: pets.isFromBreeder,
+        createdAt: pets.createdAt,
+        shelter: {
+          id: shelters.id,
+          name: sql<string>`${users.name}::text`,
+          address: sql<string>`${shelters.address}::text`,
+          phone: sql<string>`${shelters.phone}::text`,
+          verificationStatus: shelters.verificationStatus
+        }
+      })
+      .from(pets)
+      .leftJoin(shelters, eq(pets.shelterId, shelters.userId))
+      .leftJoin(users, eq(shelters.userId, users.id));
+
+    if (!results.length) {
+      throw new AppError(404, 'NotFound', 'No pets found');
+    }
+
+    res.json(results);
+  }));
+
+  app.get("/api/pets/:id", asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await db
+      .select({
+        id: pets.id,
+        name: sql<string>`${pets.name}::text`,
+        type: pets.type,
+        breed: sql<string>`${pets.breed}::text`,
+        age: pets.age,
+        gender: pets.gender,
+        size: pets.size,
+        description: sql<string>`${pets.description}::text`,
+        images: pets.images,
+        city: sql<string>`${pets.city}::text`,
+        status: pets.status,
+        isFromBreeder: pets.isFromBreeder,
+        createdAt: pets.createdAt,
+        shelter: {
+          id: shelters.id,
+          name: sql<string>`${users.name}::text`,
+          address: sql<string>`${shelters.address}::text`,
+          phone: sql<string>`${shelters.phone}::text`,
+          verificationStatus: shelters.verificationStatus
+        }
+      })
+      .from(pets)
+      .leftJoin(shelters, eq(pets.shelterId, shelters.userId))
+      .leftJoin(users, eq(shelters.userId, users.id))
+      .where(eq(pets.id, parseInt(id)))
+      .limit(1);
+
+    if (!result.length) {
+      throw new AppError(404, 'NotFound', 'Pet not found');
+    }
+
+    res.json(result[0]);
+  }));
   // Products routes with proper type handling
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
