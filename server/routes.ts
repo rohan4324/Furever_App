@@ -182,19 +182,19 @@ export function registerRoutes(app: Express) {
     let query = baseQuery;
     
     if (category) {
-      query = query.where(eq(products.category, category as string));
+      query = baseQuery.where(eq(products.category, category as string));
     }
     
     if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      query = baseQuery.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
     if (sortBy === "price_asc") {
-      query = query.orderBy(asc(products.price));
+      query = baseQuery.orderBy(asc(products.price));
     } else if (sortBy === "price_desc") {
-      query = query.orderBy(desc(products.price));
+      query = baseQuery.orderBy(desc(products.price));
     } else if (sortBy === "rating") {
-      query = query.orderBy(desc(products.rating));
+      query = baseQuery.orderBy(desc(products.rating));
     }
 
     const results = await query;
