@@ -113,9 +113,16 @@ export default function Cart() {
               className="flex gap-4 p-4 border rounded-lg"
             >
               <img
-                src={item.product.images[0]}
+                src={item.product.images[0]?.startsWith('/') 
+                  ? item.product.images[0] 
+                  : `/images/products/${item.product.images[0]}`}
                 alt={item.product.name}
                 className="w-24 h-24 object-cover rounded-md"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = '/images/products/placeholder.jpg';
+                }}
               />
               <div className="flex-1">
                 <div className="flex justify-between">
