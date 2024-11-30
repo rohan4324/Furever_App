@@ -184,47 +184,44 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
       
-    const baseQuery = db.select({
-      id: products.id,
-      name: sql<string>`${products.name}::text`,
-      description: sql<string>`${products.description}::text`,
-      price: products.price,
-      category: products.category,
-      subCategory: products.subCategory,
-      images: products.images,
-      brand: sql<string>`${products.brand}::text`,
-      stock: products.stock,
-      rating: products.rating,
-      petType: products.petType,
-      createdAt: products.createdAt
-    }).from(products);
+    const query = db
+      .select({
+        id: products.id,
+        name: sql<string>`${products.name}::text`,
+        description: sql<string>`${products.description}::text`,
+        price: products.price,
+        category: products.category,
+        subCategory: products.subCategory,
+        images: products.images,
+        brand: sql<string>`${products.brand}::text`,
+        stock: products.stock,
+        rating: products.rating,
+        petType: products.petType,
+        createdAt: products.createdAt
+      })
+      .from(products);
 
-    let finalQuery = baseQuery;
-
+    // Add where clauses
     if (category) {
-      finalQuery = finalQuery.where(eq(products.category, category as string));
+      query.where(eq(products.category, category as string));
     }
 
     if (petType && petType !== "all") {
-      finalQuery = finalQuery.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+      query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
-    // Apply sorting
-    switch(sortBy) {
-      case "price_asc":
-        finalQuery = finalQuery.orderBy(asc(products.price));
-        break;
-      case "price_desc":
-        finalQuery = finalQuery.orderBy(desc(products.price));
-        break;
-      case "rating":
-        finalQuery = finalQuery.orderBy(desc(products.rating));
-        break;
-      default:
-        finalQuery = finalQuery.orderBy(desc(products.createdAt));
+    // Add order by
+    if (sortBy === "price_asc") {
+      query.orderBy(asc(products.price));
+    } else if (sortBy === "price_desc") {
+      query.orderBy(desc(products.price));
+    } else if (sortBy === "rating") {
+      query.orderBy(desc(products.rating));
+    } else {
+      query.orderBy(desc(products.createdAt));
     }
 
-    const results = await finalQuery;
+    const results = await query;
     res.json(results);
   }));
 
