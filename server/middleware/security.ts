@@ -77,40 +77,16 @@ export const cacheControl = (req: Request, res: Response, next: NextFunction) =>
 
 // Production rate limiting configuration
 export const productionRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
-  message: "Too many requests from this IP, please try again later",
+  message: "Too many requests from this IP",
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
     if (!req.url) return false;
-    
-    // Define rate limits based on endpoint type
-    const endpoint = req.url.split('?')[0]; // Remove query parameters
-    
-    // Less restrictive for static assets and health checks
-    if (/\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|eot|svg)$/.test(endpoint) ||
-        endpoint === '/health' || endpoint === '/ping') {
-      return true;
-    }
-    
-    // More restrictive for authentication endpoints
-    if (endpoint.startsWith('/api/auth')) {
-      req.rateLimit = {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: process.env.NODE_ENV === 'production' ? 5 : 100, // Stricter limit for auth
-      };
-    }
-    
-    // Standard API endpoints
-    if (endpoint.startsWith('/api')) {
-      req.rateLimit = {
-        windowMs: 15 * 60 * 1000,
-        max: process.env.NODE_ENV === 'production' ? 100 : 1000,
-      };
-    }
-    
-    return false;
+    return /\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|eot|svg)$/.test(req.url) ||
+           req.url === '/health' || 
+           req.url === '/ping';
   },
   handler: (req, res) => {
     logger.warn({

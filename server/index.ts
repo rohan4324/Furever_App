@@ -46,8 +46,8 @@ app.use(express.urlencoded({
   limit: process.env.NODE_ENV === 'production' ? '1mb' : '10mb'
 }));
 
-// Add request tracking for large payloads
-app.use((req, res, next) => {
+// Request size monitoring middleware
+const requestSizeMonitor = (req: Request, res: Response, next: NextFunction) => {
   const contentLength = parseInt(req.headers['content-length'] || '0');
   if (contentLength > 500000) { // Log requests larger than 500KB
     logger.warn({
@@ -59,7 +59,9 @@ app.use((req, res, next) => {
     });
   }
   next();
-});
+};
+
+app.use(requestSizeMonitor);
 
 // 4. Session middleware
 const MemoryStoreSession = MemoryStore(session);
