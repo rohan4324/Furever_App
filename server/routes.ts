@@ -26,6 +26,11 @@ class AppError extends Error {
   }
 }
 
+// Auth Request interface
+interface AuthRequest extends Request {
+  user?: { id: number };
+}
+
 // Error Handler Middleware
 const errorHandler = (
   error: Error,
@@ -56,9 +61,17 @@ const errorHandler = (
   });
 };
 
+// Auth middleware
+const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    throw new AppError(401, 'Unauthorized', 'Authentication required');
+  }
+  next();
+};
+
 // Async handler wrapper
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+const asyncHandler = (fn: (req: AuthRequest, res: Response, next: NextFunction) => Promise<any>) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
@@ -149,7 +162,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/products", asyncHandler(async (req, res) => {
     const { category, sortBy, petType } = req.query;
 
-    let query = db
+    const baseQuery = db
       .select({
         id: products.id,
         name: sql<string>`${products.name}::text`,
@@ -166,6 +179,8 @@ export function registerRoutes(app: Express) {
       })
       .from(products);
     
+    let query = baseQuery;
+    
     if (category) {
       query = query.where(eq(products.category, category as string));
     }
@@ -174,15 +189,12 @@ export function registerRoutes(app: Express) {
       query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
     }
 
-    // Apply sorting with proper type handling
-    if (sortBy) {
-      if (sortBy === "price_asc") {
-        query = query.orderBy(asc(products.price));
-      } else if (sortBy === "price_desc") {
-        query = query.orderBy(desc(products.price));
-      } else if (sortBy === "rating") {
-        query = query.orderBy(desc(sql<string>`COALESCE(${products.rating}, 0)`));
-      }
+    if (sortBy === "price_asc") {
+      query = query.orderBy(asc(products.price));
+    } else if (sortBy === "price_desc") {
+      query = query.orderBy(desc(products.price));
+    } else if (sortBy === "rating") {
+      query = query.orderBy(desc(products.rating));
     }
 
     const results = await query;
@@ -323,53 +335,21 @@ export function registerRoutes(app: Express) {
     res.json(result[0]);
   }));
   // Products routes with proper type handling
-  app.get("/api/products", asyncHandler(async (req, res) => {
-    const { category, sortBy, petType } = req.query;
+  app.get("/api/products/:id", asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, parseInt(id)))
+      .limit(1);
 
-    let query = db
-      .select({
-        id: products.id,
-        name: sql<string>`${products.name}::text`,
-        description: sql<string>`${products.description}::text`,
-        price: sql<string>`${products.price}::decimal`,
-        category: products.category,
-        subCategory: products.subCategory,
-        images: products.images,
-        brand: sql<string>`${products.brand}::text`,
-        stock: products.stock,
-        rating: sql<string>`${products.rating}::decimal`,
-        petType: products.petType,
-        createdAt: products.createdAt
-      })
-      .from(products);
-    
-    if (category) {
-      query = query.where(eq(products.category, category as string));
-    }
-    
-    if (petType && petType !== "all") {
-      query = query.where(sql`${products.petType}::text[] @> ARRAY[${petType}]::text[]`);
+    if (!result.length) {
+      throw new AppError(404, 'NotFound', 'Product not found');
     }
 
-    // Apply sorting with proper type handling
-    if (sortBy) {
-      if (sortBy === "price_asc") {
-        query = query.orderBy(asc(products.price));
-      } else if (sortBy === "price_desc") {
-        query = query.orderBy(desc(products.price));
-      } else if (sortBy === "rating") {
-        query = query.orderBy(desc(sql<string>`COALESCE(${products.rating}, 0)`));
-      }
-    }
-
-    const results = await query;
-
-    if (!results.length) {
-      throw new AppError(404, 'NotFound', 'No products found');
-    }
-
-    res.json(results);
+    res.json(result[0]);
   }));
+
 
   app.post("/api/products", asyncHandler(async (req, res) => {
     const productSchema = z.object({
@@ -395,23 +375,8 @@ export function registerRoutes(app: Express) {
     res.status(201).json(result);
   }));
 
-  app.get("/api/products/:id", asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const result = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, parseInt(id)))
-      .limit(1);
-
-    if (!result.length) {
-      throw new AppError(404, 'NotFound', 'Product not found');
-    }
-
-    res.json(result[0]);
-  }));
-
-
-  app.post("/api/applications", asyncHandler(async (req, res) => {
+  // Add protected route for adoption applications
+  app.post("/api/applications", requireAuth, asyncHandler(async (req: AuthRequest, res: Response) => {
     // Adjusting the expected structure to include all required fields
     const applicationSchema = z.object({
       petId: z.number(),
@@ -428,8 +393,7 @@ export function registerRoutes(app: Express) {
       questionnaire: z.object({
         symptoms: z.array(z.string()).optional(),
         treatment: z.string().optional(),
-        // Add more fields as necessary
-      }).optional(), // Ensure to define any additional required fields
+      }).optional(),
     });
 
     const validatedData = applicationSchema.parse(req.body);
@@ -452,7 +416,7 @@ export function registerRoutes(app: Express) {
     // Create the adoption application with proper type handling
     const result = await db.insert(adoptionApplications).values({
       petId: validatedData.petId,
-      userId: (req.user as { id: number }).id,
+      userId: req.user?.id as number,
       status: validatedData.status,
       questionnaire: sql`${JSON.stringify({
         homeType: validatedData.homeType,
