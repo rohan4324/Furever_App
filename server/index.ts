@@ -1,74 +1,67 @@
-import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
-import MemoryStore from "memorystore";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic } from "./vite";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import session from "express-session";
+import MemoryStore from "memorystore";
+import { setupVite, serveStatic } from "./vite";
 import { configureSecurityMiddleware, logger } from "./middleware/security";
-import path from "path";
+import { registerRoutes } from "./routes";
+import compression from "compression";
 
-// Extend Express Request type to include session
-declare module "express-session" {
-  interface SessionData {
-    userId?: number;
-  }
-}
-
-// Video consultation room type
 interface VideoRoom {
   appointmentId: string;
   participants: string[];
 }
 
 function log(message: string) {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, "0");
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const seconds = now.getSeconds().toString().padStart(2, "0");
+  const formattedTime = `${hours}:${minutes}:${seconds}`;
   console.log(`${formattedTime} [express] ${message}`);
 }
 
-import compression from "compression";
 const app = express();
 
-// Enable compression for all responses
+// 1. Compression middleware (should be first)
 app.use(compression());
 
-// Set production performance headers
-app.use((req, res, next) => {
-  // Add security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  
-  // Add performance headers
-  if (process.env.NODE_ENV === 'production') {
-    // Cache static assets
-    if (req.url.match(/\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|eot|svg)$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
-    } else {
-      // For API and dynamic content
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+// 2. Security middleware
+configureSecurityMiddleware(app);
+
+// 3. Body parsing middleware with size limits and validation
+app.use(express.json({ 
+  limit: process.env.NODE_ENV === 'production' ? '1mb' : '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf.toString());
+    } catch (e) {
+      throw new Error('Invalid JSON');
     }
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: false, 
+  limit: process.env.NODE_ENV === 'production' ? '1mb' : '10mb'
+}));
+
+// Add request tracking for large payloads
+app.use((req, res, next) => {
+  const contentLength = parseInt(req.headers['content-length'] || '0');
+  if (contentLength > 500000) { // Log requests larger than 500KB
+    logger.warn({
+      message: 'Large request detected',
+      size: contentLength,
+      path: req.path,
+      method: req.method,
+      ip: req.ip
+    });
   }
   next();
 });
 
-// Configure security middleware
-configureSecurityMiddleware(app);
-
-// Body parsing middleware with size limits
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
-
-// Configure session middleware
+// 4. Session middleware
 const MemoryStoreSession = MemoryStore(session);
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -86,6 +79,7 @@ app.use(session({
   name: 'sessionId', // Change default cookie name
 }));
 
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -117,7 +111,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // 5. API routes
   registerRoutes(app);
+  
   const server = createServer(app);
   const io = new Server(server);
   
@@ -162,7 +158,7 @@ app.use((req, res, next) => {
     });
   });
 
-  // Global error handler
+  // 6. Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     
@@ -198,17 +194,13 @@ app.use((req, res, next) => {
     }
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // 7. Setup Vite/Static file serving (based on environment)
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
   const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
