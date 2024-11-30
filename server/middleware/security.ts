@@ -32,14 +32,16 @@ export const limiter = rateLimit({
 
 // CORS configuration
 export const corsOptions = {
-  origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' 
-    ? 'https://yourdomain.com'
-    : 'http://localhost:5000'),
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.CORS_ORIGIN || 'https://yourdomain.com'
+    : ['http://localhost:5000', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   maxAge: 86400, // 24 hours
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  preflightContinue: false,
+  exposedHeaders: ['Content-Length', 'Content-Type']
 };
 
 // Cache control middleware
@@ -60,22 +62,38 @@ export const cacheControl = (req: Request, res: Response, next: NextFunction) =>
 // Production rate limiting configuration
 export const productionRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Limit each IP to 100 requests per windowMs in production
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: "Too many requests from this IP, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
     if (!req.url) return false;
+    // Skip rate limiting for static assets and health checks
     const isStaticAsset = /\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|eot|svg)$/.test(req.url);
-    return isStaticAsset;
+    const isHealthCheck = req.url === '/health' || req.url === '/ping';
+    return isStaticAsset || isHealthCheck;
   },
   handler: (req, res) => {
-    logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+    logger.warn({
+      message: 'Rate limit exceeded',
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+      timestamp: new Date().toISOString()
+    });
     res.status(429).json({
       error: 'Too Many Requests',
-      message: 'Please try again later'
+      message: 'Please try again later',
+      retryAfter: Math.ceil(15 * 60) // 15 minutes in seconds
     });
-  }
+  },
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For if available, otherwise use IP
+    return req.headers['x-forwarded-for']?.toString() || req.ip;
+  },
+  skipFailedRequests: false,
+  skipSuccessfulRequests: false,
+  requestWasSuccessful: (req, res) => res.statusCode < 400
 });
 
 // Request logging middleware
@@ -114,17 +132,21 @@ export const configureSecurityMiddleware = (app: any) => {
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", process.env.CORS_ORIGIN].filter((src): src is string => typeof src === 'string'),
-        fontSrc: ["'self'"],
+        fontSrc: ["'self'", "https:", "data:"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
         frameSrc: ["'none'"],
+        formAction: ["'self'"],
         upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+        workerSrc: ["'self'", "blob:"],
+        manifestSrc: ["'self'"],
+        baseUri: ["'self'"]
       },
     },
     crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
-    crossOriginOpenerPolicy: process.env.NODE_ENV === 'production',
+    crossOriginOpenerPolicy: { policy: process.env.NODE_ENV === 'production' ? 'same-origin' : 'unsafe-none' },
     crossOriginResourcePolicy: { policy: "same-site" },
-    dnsPrefetchControl: true,
+    dnsPrefetchControl: { allow: false },
     frameguard: { action: "deny" },
     hidePoweredBy: true,
     hsts: {
