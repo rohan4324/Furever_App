@@ -135,12 +135,40 @@ app.use((req, res, next) => {
     });
   });
 
+  // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    
+    // Sanitize error messages in production
+    const message = process.env.NODE_ENV === 'production'
+      ? status === 500 ? 'Internal Server Error' : err.message
+      : err.message || 'Internal Server Error';
 
-    res.status(status).json({ message });
-    throw err;
+    // Log the full error in production
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Error:', {
+        status,
+        message: err.message,
+        stack: err.stack,
+        path: _req.path,
+        method: _req.method
+      });
+    }
+
+    res.status(status).json({ 
+      status: status < 500 ? 'error' : 'fail',
+      message,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+  });
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason: Error) => {
+    logger.error('Unhandled Promise Rejection:', reason);
+    // Don't exit the process in development
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   });
 
   // importantly only setup vite in development and after
