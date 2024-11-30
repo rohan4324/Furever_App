@@ -32,7 +32,34 @@ function log(message: string) {
   console.log(`${formattedTime} [express] ${message}`);
 }
 
+import compression from "compression";
 const app = express();
+
+// Enable compression for all responses
+app.use(compression());
+
+// Set production performance headers
+app.use((req, res, next) => {
+  // Add security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Add performance headers
+  if (process.env.NODE_ENV === 'production') {
+    // Cache static assets
+    if (req.url.match(/\.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|eot|svg)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+    } else {
+      // For API and dynamic content
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  next();
+});
 
 // Configure security middleware
 configureSecurityMiddleware(app);

@@ -9,17 +9,33 @@ export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: winston.format.combine(
     winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.metadata(),
     winston.format.json()
   ),
   transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
-  ]
+    new winston.transports.File({ 
+      filename: 'error.log', 
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+    new winston.transports.File({ 
+      filename: 'combined.log',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    })
+  ],
+  handleExceptions: true,
+  handleRejections: true
 });
 
 if (process.env.NODE_ENV !== 'production') {
   logger.add(new winston.transports.Console({
-    format: winston.format.simple()
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    )
   }));
 }
 
@@ -127,19 +143,19 @@ export const configureSecurityMiddleware = (app: any) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", process.env.CORS_ORIGIN].filter((src): src is string => typeof src === 'string'),
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "ws:", "wss:", "*"],
         fontSrc: ["'self'", "https:", "data:"],
-        objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
+        frameSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
         formAction: ["'self'"],
-        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
-        workerSrc: ["'self'", "blob:"],
         manifestSrc: ["'self'"],
-        baseUri: ["'self'"]
+        workerSrc: ["'self'", "blob:"],
+        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
       },
     },
     crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
